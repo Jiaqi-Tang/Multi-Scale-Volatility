@@ -252,3 +252,188 @@ Distribution of observed 1-minute bars per retained 5-minute OHLC bar:
 4 observed 1-minute bars: 7,807
 5 observed 1-minute bars: 726,627
 ```
+
+---
+
+# Length Standardization
+
+Objective: truncate the dataset so its length is divisible by $2^K$, such that Block-Average Multi-Scale Decomposition can be done.
+
+## Design choices
+
+Choose maximum decomposition depth: $$K = 11$$
+
+This gives block size of $2^K = 2048$.
+
+Since the base return frequency is 5 minutes, the time span of one maximum-depth
+block is:
+
+$$
+T_K = 5 \times 2^{11} = 10240\text{ minutes} \approx 7.11\text{ days}
+$$
+
+The standardized length is:
+
+$$
+N^* = \max \{2^K \cdot m : 2^K \cdot m \leq N\} = 2^K \left\lfloor \frac{N}{2^K} \right\rfloor
+$$
+
+With $K=11$ and $N=735,706$:
+
+$$
+N^* = 735{,}232
+$$
+
+The final analysis return series is:
+
+$$
+R^* = \{r_1, r_2, \ldots, r_{N^*}\}
+$$
+
+Rows are truncated from the end of the dataset only. The start of the sample is
+preserved.
+
+## Results
+
+Rows dropped by truncation:
+
+$$
+N - N^* = 474
+$$
+
+Dropped tail timestamp range: `2025-12-30 06:30 UTC to 2025-12-31 21:55 UTC`
+
+Final standardized timestamp range: `2016-01-03 22:05 UTC to 2025-12-30 06:25 UTC`
+
+The standardized final dataset is saved as: `data/final_analysis/eurusd_5m_log_returns_final.csv`
+
+The truncation report is saved as: `data/final_analysis/truncation_report.json`
+
+For $R^*$:
+
+```text
+mean_log_return: 1.381445428226864e-07
+variance_log_return: 8.257150232019612e-08
+std_log_return: 0.00028735257493225306
+min_log_return: -0.0097635255221106
+max_log_return: 0.0126936410859073
+median_log_return: 0.0
+skewness_log_return: 0.15778024187331044
+kurtosis_log_return: 44.2160995969573
+```
+
+---
+
+# Baseline Series
+
+Objective: Create baseline time series such that entropy can be interpreted against a baseline entropy.
+
+## Design choices
+
+Baseline series are generated from the standardized final return series $R^*$.
+
+All baseline series have length $|R^{baseline}| = N^*$, and use the same timestamp index as $R^*$.
+
+The timestamps are retained as alignment metadata; the baseline computations are conducted on ordered return index:
+
+$$
+i = 1,2,\ldots,N^*
+$$
+
+## Shuffled Baseline
+
+The shuffled baseline is a random permutation of the standardized returns:
+
+$$
+R^{shuffle} = \pi(R^*)
+$$
+
+where $\pi$ is a random permutation.
+
+Random seed: $137$
+
+Properties preserved:
+
+- same empirical distribution as $R^*$
+- same mean and variance as $R^*$
+- same minimum and maximum as $R^*$
+
+Property destroyed:
+
+- temporal ordering
+
+Output:
+
+```text
+data/final_analysis/baselines/eurusd_5m_log_returns_shuffle.csv
+```
+
+## Brownian / Gaussian Baseline
+
+The Gaussian baseline is generated as:
+
+$$
+R^{BM}_i \sim \mathcal{N}(0, \sigma_R^2)
+$$
+
+where:
+
+$$
+\sigma_R^2 = Var(R^*)
+$$
+
+The variance is the population variance of the standardized final return series:
+
+$$
+\sigma_R^2
+=
+\frac{1}{N^*}\sum_{i=1}^{N^*}(r_i - \bar{r})^2
+$$
+
+where $\sigma_R^2 = 8.257150232019612 \times 10^{-8}$
+
+Random seed: $271$
+
+Properties targeted:
+
+- same population variance as $R^*$
+- Gaussian independent increments
+- zero mean
+
+Output:
+
+```text
+data/final_analysis/baselines/eurusd_5m_log_returns_gaussian.csv
+```
+
+The baseline report is saved as:
+
+```text
+data/final_analysis/baselines/baselines_report.json
+```
+
+## Results
+
+Shuffled baseline:
+
+```text
+rows: 735,232
+mean_log_return: 1.381445428226864e-07
+population_variance_log_return: 8.257150232019612e-08
+population_std_log_return: 0.00028735257493225306
+min_log_return: -0.0097635255221106
+max_log_return: 0.0126936410859073
+```
+
+Gaussian baseline:
+
+```text
+rows: 735,232
+target_mean_log_return: 0.0
+target_population_variance_log_return: 8.257150232019612e-08
+realized_mean_log_return: 1.1733939639875955e-07
+realized_population_variance_log_return: 8.249276080303108e-08
+realized_population_std_log_return: 0.0002872155302260501
+min_log_return: -0.0015116429800731662
+max_log_return: 0.0013819795205624716
+```
