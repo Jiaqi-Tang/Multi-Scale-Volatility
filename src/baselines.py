@@ -17,8 +17,8 @@ GAUSSIAN_SEED = 271
 
 @dataclass(frozen=True)
 class BaselinePaths:
-    input_csv: Path = Path("data/final_analysis/eurusd_5m_log_returns_final.csv")
-    output_dir: Path = Path("data/final_analysis/baselines")
+    input_csv: Path = Path("data/final/eurusd_5m_log_returns_final.csv")
+    output_dir: Path = Path("data/baselines")
 
     @property
     def shuffle_csv(self) -> Path:
@@ -106,4 +106,3 @@ def create_baselines(
     }
     paths.report_json.write_text(json.dumps(report, indent=2), encoding="utf-8")
     return report
-

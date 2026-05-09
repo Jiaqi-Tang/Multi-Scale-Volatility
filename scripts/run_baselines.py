@@ -17,12 +17,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--input-csv",
         type=Path,
-        default=Path("data/final_analysis/eurusd_5m_log_returns_final.csv"),
+        default=Path("data/final/eurusd_5m_log_returns_final.csv"),
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("data/final_analysis/baselines"),
+        default=Path("data/baselines"),
     )
     parser.add_argument("--shuffle-seed", type=int, default=SHUFFLE_SEED)
     parser.add_argument("--gaussian-seed", type=int, default=GAUSSIAN_SEED)

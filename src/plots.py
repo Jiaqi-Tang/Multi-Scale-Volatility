@@ -17,12 +17,12 @@ import pandas as pd
 
 @dataclass(frozen=True)
 class PlotPaths:
-    final_csv: Path = Path("data/final_analysis/eurusd_5m_log_returns_final.csv")
+    final_csv: Path = Path("data/final/eurusd_5m_log_returns_final.csv")
     shuffle_csv: Path = Path(
-        "data/final_analysis/baselines/eurusd_5m_log_returns_shuffle.csv"
+        "data/baselines/eurusd_5m_log_returns_shuffle.csv"
     )
     gaussian_csv: Path = Path(
-        "data/final_analysis/baselines/eurusd_5m_log_returns_gaussian.csv"
+        "data/baselines/eurusd_5m_log_returns_gaussian.csv"
     )
     output_dir: Path = Path("plots/eda")
 

@@ -18,8 +18,8 @@ BASE_INTERVAL_MINUTES = 5
 @dataclass(frozen=True)
 class LengthStandardizationPaths:
     input_csv: Path = Path("data/intermediate/eurusd_5m_log_returns_clean.csv")
-    output_csv: Path = Path("data/final_analysis/eurusd_5m_log_returns_final.csv")
-    report_json: Path = Path("data/final_analysis/truncation_report.json")
+    output_csv: Path = Path("data/final/eurusd_5m_log_returns_final.csv")
+    report_json: Path = Path("data/final/truncation_report.json")
 
 
 def standardize_length(
@@ -95,4 +95,3 @@ def _iso_or_none(value: Any) -> str | None:
     if isinstance(value, np.datetime64):
         return pd.Timestamp(value).isoformat()
     return str(value)
-

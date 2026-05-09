@@ -16,17 +16,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--final-csv",
         type=Path,
-        default=Path("data/final_analysis/eurusd_5m_log_returns_final.csv"),
+        default=Path("data/final/eurusd_5m_log_returns_final.csv"),
     )
     parser.add_argument(
         "--shuffle-csv",
         type=Path,
-        default=Path("data/final_analysis/baselines/eurusd_5m_log_returns_shuffle.csv"),
+        default=Path("data/baselines/eurusd_5m_log_returns_shuffle.csv"),
     )
     parser.add_argument(
         "--gaussian-csv",
         type=Path,
-        default=Path("data/final_analysis/baselines/eurusd_5m_log_returns_gaussian.csv"),
+        default=Path("data/baselines/eurusd_5m_log_returns_gaussian.csv"),
     )
     parser.add_argument("--output-dir", type=Path, default=Path("plots/eda"))
     parser.add_argument("--max-acf-lag", type=int, default=288)

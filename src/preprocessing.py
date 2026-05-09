@@ -22,7 +22,7 @@ UTC = timezone.utc
 
 @dataclass(frozen=True)
 class PreprocessingPaths:
-    raw_dir: Path = Path("data/metatrader")
+    raw_dir: Path = Path("data/raw/metatrader")
     intermediate_dir: Path = Path("data/intermediate")
 
     @property
@@ -322,4 +322,3 @@ def _iso_or_none(value: Any) -> str | None:
     if isinstance(value, pd.Timestamp):
         return value.isoformat()
     return str(value)
-

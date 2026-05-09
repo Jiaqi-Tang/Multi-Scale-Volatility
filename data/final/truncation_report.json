@@ -1,6 +1,6 @@
 {
   "input_csv": "data\\intermediate\\eurusd_5m_log_returns_clean.csv",
-  "output_csv": "data\\final_analysis\\eurusd_5m_log_returns_final.csv",
+  "output_csv": "data\\final\\eurusd_5m_log_returns_final.csv",
   "K": 11,
   "block_size": 2048,
   "base_interval_minutes": 5,

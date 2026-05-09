@@ -26,12 +26,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-csv",
         type=Path,
-        default=Path("data/final_analysis/eurusd_5m_log_returns_final.csv"),
+        default=Path("data/final/eurusd_5m_log_returns_final.csv"),
     )
     parser.add_argument(
         "--report-json",
         type=Path,
-        default=Path("data/final_analysis/truncation_report.json"),
+        default=Path("data/final/truncation_report.json"),
     )
     parser.add_argument("--k", type=int, default=DEFAULT_K)
     return parser.parse_args()

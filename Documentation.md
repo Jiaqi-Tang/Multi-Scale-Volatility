@@ -2,6 +2,8 @@
 
 Raw data source: [HistData's MetaTrader EUR/USD 1-minute bar data](https://www.histdata.com/download-free-forex-historical-data/?/metatrader/1-minute-bar-quotes/EURUSD).
 
+Local raw files are stored under `data/raw/metatrader`.
+
 Asset: EUR/USD.
 
 Raw frequency: 1-minute OHLC bars.
@@ -225,7 +227,7 @@ The final analysis dataset will be produced after length standardization and sav
 as:
 
 ```text
-data/final_analysis/eurusd_5m_log_returns_final.csv
+data/final/eurusd_5m_log_returns_final.csv
 ```
 
 **Preprocessing Results**
@@ -305,9 +307,9 @@ Dropped tail timestamp range: `2025-12-30 06:30 UTC to 2025-12-31 21:55 UTC`
 
 Final standardized timestamp range: `2016-01-03 22:05 UTC to 2025-12-30 06:25 UTC`
 
-The standardized final dataset is saved as: `data/final_analysis/eurusd_5m_log_returns_final.csv`
+The standardized final dataset is saved as: `data/final/eurusd_5m_log_returns_final.csv`
 
-The truncation report is saved as: `data/final_analysis/truncation_report.json`
+The truncation report is saved as: `data/final/truncation_report.json`
 
 For $R^*$:
 
@@ -365,7 +367,7 @@ Property destroyed:
 Output:
 
 ```text
-data/final_analysis/baselines/eurusd_5m_log_returns_shuffle.csv
+data/baselines/eurusd_5m_log_returns_shuffle.csv
 ```
 
 ## Brownian / Gaussian Baseline
@@ -403,13 +405,13 @@ Properties targeted:
 Output:
 
 ```text
-data/final_analysis/baselines/eurusd_5m_log_returns_gaussian.csv
+data/baselines/eurusd_5m_log_returns_gaussian.csv
 ```
 
 The baseline report is saved as:
 
 ```text
-data/final_analysis/baselines/baselines_report.json
+data/baselines/baselines_report.json
 ```
 
 ## Results

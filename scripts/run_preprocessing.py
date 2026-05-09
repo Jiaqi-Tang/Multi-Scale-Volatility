@@ -14,7 +14,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Preprocess raw HistData MetaTrader EUR/USD M1 CSVs."
     )
-    parser.add_argument("--raw-dir", type=Path, default=Path("data/metatrader"))
+    parser.add_argument("--raw-dir", type=Path, default=Path("data/raw/metatrader"))
     parser.add_argument("--intermediate-dir", type=Path, default=Path("data/intermediate"))
     return parser.parse_args()
 
