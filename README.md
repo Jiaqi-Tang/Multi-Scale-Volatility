@@ -1,6 +1,8 @@
 # Multi-Scale Volatility–Entropy Decomposition of EUR/USD Returns
 
-Currently in development. See `plots/` or `results/` for intermediate results and findings.
+Currently in development. 
+- See `plots/` or `results/` for intermediate results and findings.
+- See `Documentation.md` for exact research design and methodology.
 
 ## Objective
 
