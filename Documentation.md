@@ -552,3 +552,359 @@ gaussian:
   max_abs_reconstruction_error: 4.336808689942018e-19
   mean_abs_reconstruction_error: 2.874568672696032e-20
 ```
+
+---
+
+# Volatility / Energy Metrics
+
+Objective: Quantify how return variation is distributed across decomposition
+components.
+
+## Design choices
+
+Volatility metrics are computed for:
+
+$$
+D_1,\ldots,D_{11},A_{11}
+$$
+
+for each of:
+
+$$
+R^*,\quad R^{shuffle},\quad R^{BM}
+$$
+
+Let a decomposition component be:
+
+$$
+X_c = \{x_{c,1},x_{c,2},\ldots,x_{c,N^*}\}
+$$
+
+where $c$ denotes one of the saved components.
+
+Component energy is:
+
+$$
+E_c = \sum_{i=1}^{N^*}x_{c,i}^2
+$$
+
+RMS volatility is:
+
+$$
+\sigma_c^{RMS}
+=
+\sqrt{\frac{1}{N^*}E_c}
+$$
+
+RMS is used rather than standard deviation because each detail layer is a
+zero-sum reconstruction component and the decomposition identity is expressed in
+terms of squared component magnitudes. This makes RMS directly comparable to
+energy.
+
+Annualized RMS volatility is reported as:
+
+$$
+\sigma_{c,ann}^{RMS}
+=
+\sigma_c^{RMS}\sqrt{252 \times 24 \times 12}
+$$
+
+with assumptions `trading_days_per_year=252`, `trading_hours_per_day=24`, `periods_per_hour=12`, `periods_per_year=72,576`.
+
+Two energy-share definitions are computed.
+
+Detail energy share is defined only for detail layers:
+
+$$
+p_k^{detail}
+=
+\frac{E(D_k)}{\sum_{j=1}^{11}E(D_j)}
+$$
+
+Total component energy share includes the final approximation:
+
+$$
+p_c^{total}
+=
+\frac{E_c}{\sum_{j=1}^{11}E(D_j) + E(A_{11})}
+$$
+
+where:
+
+$$
+c \in \{D_1,\ldots,D_{11},A_{11}\}
+$$
+
+The mean of every component is recorded in the report for audit purposes.
+
+## Outputs
+
+Volatility outputs are saved under `results/volatility`:
+
+```text
+results/volatility/layer_volatility.csv
+results/volatility/volatility_report.json
+```
+
+The volatility CSV has one row per series and component:
+
+```text
+series
+component
+k
+component_type
+scale_minutes
+scale_days
+energy
+rms_volatility
+annualized_rms_volatility
+detail_energy_share
+total_component_energy_share
+```
+
+## Results
+
+For the final EUR/USD series, most detail-layer energy is concentrated at the
+finest scales:
+
+```text
+D_01 detail_energy_share: 0.5128464888450802
+D_02 detail_energy_share: 0.24912090865546974
+D_03 detail_energy_share: 0.12177649049781977
+```
+
+The final approximation energy is small relative to total component energy:
+
+```text
+A_11 total_component_energy_share: 0.00038432560825245565
+```
+
+The component energy sum reconstructs the original return energy to numerical
+precision:
+
+```text
+final energy_reconstruction_gap: 1.5050460877574778e-14
+shuffle energy_reconstruction_gap: 1.7520707107365752e-14
+gaussian energy_reconstruction_gap: 2.0122792321330962e-14
+```
+
+---
+
+# Permutation Entropy
+
+Objective: Quantify temporal ordering structure within each decomposition
+component.
+
+## Design choices
+
+Permutation entropy is computed for:
+
+$$
+D_1,\ldots,D_{11},A_{11}
+$$
+
+for each of:
+
+$$
+R^*,\quad R^{shuffle},\quad R^{BM}
+$$
+
+The embedding dimension and are:
+
+$$
+m = 3, \quad \tau = 1
+$$
+
+For each component, deterministic repeated block values created by block-mean
+expansion are removed before entropy is computed.
+
+Let the compressed component be:
+
+$$
+X_c^{comp}
+$$
+
+This compression is used only for entropy calculation. It does not alter the
+decomposition outputs or volatility metrics.
+
+For entropy only, deterministic jitter is added after compression:
+
+$$
+\tilde{x}_{c,i}
+=
+x_{c,i}^{comp} + \epsilon_i
+$$
+
+where:
+
+$$
+\epsilon_i \sim Uniform(-10^{-10},10^{-10})
+$$
+
+Base jitter seed is `314`.
+
+Component-specific deterministic seeds are derived from the base seed, series
+name, and component name. The jitter is used only to break ties in ordinal
+ranking. It is not used for returns, decomposition, volatility, or energy.
+
+For each ordinal window:
+
+$$
+(\tilde{x}_{c,i},\tilde{x}_{c,i+\tau},\tilde{x}_{c,i+2\tau})
+$$
+
+the rank-order pattern is counted.
+
+There are $3! = 6$ possible ordinal patterns. Let the ordinal pattern probabilities be $q_1,\ldots,q_6$.
+
+Permutation entropy is:
+
+$$
+H_c = -\sum_{j=1}^{6}q_j\log(q_j)
+$$
+
+using natural logarithms.
+
+Normalized permutation entropy is:
+
+$$
+H_c^{norm}
+=
+\frac{H_c}{\log(6)}
+$$
+
+so that:
+
+$$
+0 \leq H_c^{norm} \leq 1
+$$
+
+## Outputs
+
+Entropy outputs are saved under `results/entropy`:
+
+```text
+results/entropy/layer_entropy.csv
+results/entropy/entropy_report.json
+```
+
+The entropy CSV has one row per series and component:
+
+```text
+series
+component
+k
+component_type
+scale_minutes
+scale_days
+repeat_length
+effective_n
+ordinal_windows
+permutation_entropy
+normalized_entropy
+```
+
+Ordinal pattern counts are recorded in `results/entropy/entropy_report.json`.
+
+## Results
+
+Normalized entropy is high across all final EUR/USD components:
+
+```text
+final D_01 normalized_entropy: 0.9905144523650508
+final D_06 normalized_entropy: 0.9894543018698768
+final D_11 normalized_entropy: 0.9886595540022752
+final A_11 normalized_entropy: 0.998564063534312
+```
+
+Effective sample size decreases with scale because repeated block values are
+compressed before entropy calculation:
+
+```text
+D_01 effective_n: 735,232
+D_06 effective_n: 22,976
+D_11 effective_n: 718
+A_11 effective_n: 359
+```
+
+Coarse-scale entropy estimates are therefore treated as noisier than fine-scale
+entropy estimates.
+
+---
+
+# Entropy Gap Metrics
+
+Objective: Compare EUR/USD ordering structure against the shuffled and Gaussian
+baselines.
+
+## Design choices
+
+Entropy gaps are computed using normalized entropy.
+
+Against the shuffled baseline:
+
+$$
+\Delta H_c^{shuffle}
+=
+H_c^{shuffle,norm} - H_c^{EURUSD,norm}
+$$
+
+Against the Gaussian baseline:
+
+$$
+\Delta H_c^{BM}
+=
+H_c^{BM,norm} - H_c^{EURUSD,norm}
+$$
+
+Positive values indicate that the baseline has higher normalized entropy than
+EUR/USD at component $c$. Under this interpretation, positive gaps suggest more
+temporal ordering structure in EUR/USD than in the baseline at that component.
+
+Negative values indicate that EUR/USD has higher normalized entropy than the
+baseline at that component.
+
+## Outputs
+
+Entropy gap results are saved as:
+
+```text
+results/entropy/entropy_gaps.csv
+```
+
+The entropy gap CSV contains:
+
+```text
+component
+k
+component_type
+scale_minutes
+scale_days
+repeat_length
+final_normalized_entropy
+shuffle_normalized_entropy
+gaussian_normalized_entropy
+entropy_gap_shuffle
+entropy_gap_gaussian
+```
+
+## Results
+
+Entropy gaps are small across most components. Examples:
+
+```text
+D_01 entropy_gap_shuffle: 0.0002695456277962416
+D_01 entropy_gap_gaussian: 0.00020682881885636384
+
+D_06 entropy_gap_shuffle: 0.0019306019646548878
+D_06 entropy_gap_gaussian: 0.0012652754256139431
+
+D_11 entropy_gap_shuffle: 0.003101733050344002
+D_11 entropy_gap_gaussian: -0.0003802058801183339
+
+A_11 entropy_gap_shuffle: -0.00459063275952265
+A_11 entropy_gap_gaussian: -0.00011979411067764012
+```
+
+The small magnitude of the gaps is consistent with the high normalized entropy
+observed across all series and components.
