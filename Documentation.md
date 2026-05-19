@@ -73,8 +73,7 @@ Load all raw EUR/USD MetaTrader CSV files from 2016 through 2025.
 The initial raw dataset is:
 
 $$
-\mathcal{X}_{1m}^{raw}
-= \{(t_i, O_i, H_i, L_i, C_i, V_i)\}_{i=1}^{N_{raw}}
+\mathcal{X}_{1m}^{raw} = \{(t_i, O_i, H_i, L_i, C_i, V_i)\}_{i=1}^{N_{raw}}
 $$
 
 **Timestamp Interpretation**
@@ -92,9 +91,7 @@ The preprocessing does not apply daylight-saving-time shifts.
 An exact duplicate means the full raw observation is repeated:
 
 $$
-(t_i, O_i, H_i, L_i, C_i, V_i)
-=
-(t_j, O_j, H_j, L_j, C_j, V_j)
+(t_i, O_i, H_i, L_i, C_i, V_i) = (t_j, O_j, H_j, L_j, C_j, V_j)
 $$
 
 for $i \neq j$.
@@ -104,9 +101,7 @@ If duplicate timestamps with different OHLC or volume values are found, this is 
 The cleaned 1-minute dataset is:
 
 $$
-\mathcal{X}_{1m}^{clean}
-=
-\{(t_i, O_i, H_i, L_i, C_i, V_i)\}_{i=1}^{N_{1m}}
+\mathcal{X}_{1m}^{clean} = \{(t_i, O_i, H_i, L_i, C_i, V_i)\}_{i=1}^{N_{1m}}
 $$
 
 where timestamps are in UTC.
@@ -154,9 +149,7 @@ or 4 observed 1-minute bars. Empty 5-minute bars are dropped.
 The resulting 5-minute OHLC dataset is:
 
 $$
-\mathcal{X}_{5m}
-=
-\{(t_j, O_j^{5m}, H_j^{5m}, L_j^{5m}, C_j^{5m}, n_j^{1m})\}_{j=1}^{N_{5m}}
+\mathcal{X}_{5m} = \{(t_j, O_j^{5m}, H_j^{5m}, L_j^{5m}, C_j^{5m}, n_j^{1m})\}_{j=1}^{N_{5m}}
 $$
 
 **Compute Log Returns**
@@ -263,7 +256,7 @@ Objective: truncate the dataset so its length is divisible by $2^K$, such that B
 
 ## Design choices
 
-Choose maximum decomposition depth: $$K = 11$$
+Choose maximum decomposition depth: $K = 11$
 
 This gives block size of $2^K = 2048$.
 
@@ -277,19 +270,19 @@ $$
 The standardized length is:
 
 $$
-N^* = \max \{2^K \cdot m : 2^K \cdot m \leq N\} = 2^K \left\lfloor \frac{N}{2^K} \right\rfloor
+N^{\ast} = \max \{2^K \cdot m : 2^K \cdot m \leq N\} = 2^K \left\lfloor \frac{N}{2^K} \right\rfloor
 $$
 
 With $K=11$ and $N=735,706$:
 
 $$
-N^* = 735{,}232
+N^{\ast} = 735{,}232
 $$
 
 The final analysis return series is:
 
 $$
-R^* = \{r_1, r_2, \ldots, r_{N^*}\}
+R^{\ast} = \{r_1, r_2, \ldots, r_{N^{\ast}}\}
 $$
 
 Rows are truncated from the end of the dataset only. The start of the sample is
@@ -300,7 +293,7 @@ preserved.
 Rows dropped by truncation:
 
 $$
-N - N^* = 474
+N - N^{\ast} = 474
 $$
 
 Dropped tail timestamp range: `2025-12-30 06:30 UTC to 2025-12-31 21:55 UTC`
@@ -311,7 +304,7 @@ The standardized final dataset is saved as: `data/final/eurusd_5m_log_returns_fi
 
 The truncation report is saved as: `data/final/truncation_report.json`
 
-For $R^*$:
+For $R^{\ast}$:
 
 ```text
 mean_log_return: 1.381445428226864e-07
@@ -332,14 +325,14 @@ Objective: Create baseline time series such that entropy can be interpreted agai
 
 ## Design choices
 
-Baseline series are generated from the standardized final return series $R^*$.
+Baseline series are generated from the standardized final return series $R^{\ast}$.
 
-All baseline series have length $|R^{baseline}| = N^*$, and use the same timestamp index as $R^*$.
+All baseline series have length $|R^{baseline}| = N^{\ast}$, and use the same timestamp index as $R^{\ast}$.
 
 The timestamps are retained as alignment metadata; the baseline computations are conducted on ordered return index:
 
 $$
-i = 1,2,\ldots,N^*
+i = 1,2,\ldots,N^{\ast}
 $$
 
 ## Shuffled Baseline
@@ -347,7 +340,7 @@ $$
 The shuffled baseline is a random permutation of the standardized returns:
 
 $$
-R^{shuffle} = \pi(R^*)
+R^{shuffle} = \pi(R^{\ast})
 $$
 
 where $\pi$ is a random permutation.
@@ -356,9 +349,9 @@ Random seed: $137$
 
 Properties preserved:
 
-- same empirical distribution as $R^*$
-- same mean and variance as $R^*$
-- same minimum and maximum as $R^*$
+- same empirical distribution as $R^{\ast}$
+- same mean and variance as $R^{\ast}$
+- same minimum and maximum as $R^{\ast}$
 
 Property destroyed:
 
@@ -381,15 +374,13 @@ $$
 where:
 
 $$
-\sigma_R^2 = Var(R^*)
+\sigma_R^2 = \mathrm{Var}(R^{\ast})
 $$
 
 The variance is the population variance of the standardized final return series:
 
 $$
-\sigma_R^2
-=
-\frac{1}{N^*}\sum_{i=1}^{N^*}(r_i - \bar{r})^2
+\sigma_R^2 = \frac{1}{N^{\ast}}\sum_{i=1}^{N^{\ast}}(r_i - \bar{r})^2
 $$
 
 where $\sigma_R^2 = 8.257150232019612 \times 10^{-8}$
@@ -398,7 +389,7 @@ Random seed: $271$
 
 Properties targeted:
 
-- same population variance as $R^*$
+- same population variance as $R^{\ast}$
 - Gaussian independent increments
 - zero mean
 
@@ -452,7 +443,7 @@ detail layers and a final approximation layer.
 The decomposition is applied to:
 
 $$
-R^*,\quad R^{shuffle},\quad R^{BM}
+R^{\ast},\quad R^{shuffle},\quad R^{BM}
 $$
 
 For each scale:
@@ -481,7 +472,7 @@ original input series over consecutive non-overlapping blocks of size $B_k$.
 For each block:
 
 $$
-\mu_j^{(k)} = \frac{1}{B_k}\sum_{i \in block_j} A_{0,i}
+\mu_j^{(k)} = \frac{1}{B_k}\sum_{i \in \text{block}_j} A_{0,i}
 $$
 
 The block mean is expanded back across its block, so $A_k$ has the same length as
@@ -528,7 +519,7 @@ data/decomposition/decomposition_report.json
 For each decomposed series, reconstruction error is computed as:
 
 $$
-\epsilon_i = original_i - \left(A_{11,i} + \sum_{k=1}^{11}D_{k,i}\right)
+\epsilon_i = \mathrm{original}_i - \left(A_{11,i} + \sum_{k=1}^{11}D_{k,i}\right)
 $$
 
 The decomposition fails if:
@@ -571,13 +562,13 @@ $$
 for each of:
 
 $$
-R^*,\quad R^{shuffle},\quad R^{BM}
+R^{\ast},\quad R^{shuffle},\quad R^{BM}
 $$
 
 Let a decomposition component be:
 
 $$
-X_c = \{x_{c,1},x_{c,2},\ldots,x_{c,N^*}\}
+X_c = \{x_{c,1},x_{c,2},\ldots,x_{c,N^{\ast}}\}
 $$
 
 where $c$ denotes one of the saved components.
@@ -585,15 +576,13 @@ where $c$ denotes one of the saved components.
 Component energy is:
 
 $$
-E_c = \sum_{i=1}^{N^*}x_{c,i}^2
+E_c = \sum_{i=1}^{N^{\ast}}x_{c,i}^2
 $$
 
 RMS volatility is:
 
 $$
-\sigma_c^{RMS}
-=
-\sqrt{\frac{1}{N^*}E_c}
+\sigma_c^{RMS} = \sqrt{\frac{1}{N^{\ast}}E_c}
 $$
 
 RMS is used rather than standard deviation because each detail layer is a
@@ -604,9 +593,7 @@ energy.
 Annualized RMS volatility is reported as:
 
 $$
-\sigma_{c,ann}^{RMS}
-=
-\sigma_c^{RMS}\sqrt{252 \times 24 \times 12}
+\sigma_{c,ann}^{RMS} = \sigma_c^{RMS}\sqrt{252 \times 24 \times 12}
 $$
 
 with assumptions `trading_days_per_year=252`, `trading_hours_per_day=24`, `periods_per_hour=12`, `periods_per_year=72,576`.
@@ -616,17 +603,13 @@ Two energy-share definitions are computed.
 Detail energy share is defined only for detail layers:
 
 $$
-p_k^{detail}
-=
-\frac{E(D_k)}{\sum_{j=1}^{11}E(D_j)}
+p_k^{detail} = \frac{E(D_k)}{\sum_{j=1}^{11}E(D_j)}
 $$
 
 Total component energy share includes the final approximation:
 
 $$
-p_c^{total}
-=
-\frac{E_c}{\sum_{j=1}^{11}E(D_j) + E(A_{11})}
+p_c^{total} = \frac{E_c}{\sum_{j=1}^{11}E(D_j) + E(A_{11})}
 $$
 
 where:
@@ -706,7 +689,7 @@ $$
 for each of:
 
 $$
-R^*,\quad R^{shuffle},\quad R^{BM}
+R^{\ast},\quad R^{shuffle},\quad R^{BM}
 $$
 
 The embedding dimension and are:
@@ -730,15 +713,13 @@ decomposition outputs or volatility metrics.
 For entropy only, deterministic jitter is added after compression:
 
 $$
-\tilde{x}_{c,i}
-=
-x_{c,i}^{comp} + \epsilon_i
+\tilde{x}_{c,i} = x_{c,i}^{comp} + \epsilon_i
 $$
 
 where:
 
 $$
-\epsilon_i \sim Uniform(-10^{-10},10^{-10})
+\epsilon_i \sim \mathrm{Uniform}(-10^{-10},10^{-10})
 $$
 
 Base jitter seed is `314`.
@@ -768,9 +749,7 @@ using natural logarithms.
 Normalized permutation entropy is:
 
 $$
-H_c^{norm}
-=
-\frac{H_c}{\log(6)}
+H_c^{norm} = \frac{H_c}{\log(6)}
 $$
 
 so that:
@@ -844,17 +823,13 @@ Entropy gaps are computed using normalized entropy.
 Against the shuffled baseline:
 
 $$
-\Delta H_c^{shuffle}
-=
-H_c^{shuffle,norm} - H_c^{EURUSD,norm}
+\Delta H_c^{shuffle} = H_c^{shuffle,norm} - H_c^{EURUSD,norm}
 $$
 
 Against the Gaussian baseline:
 
 $$
-\Delta H_c^{BM}
-=
-H_c^{BM,norm} - H_c^{EURUSD,norm}
+\Delta H_c^{BM} = H_c^{BM,norm} - H_c^{EURUSD,norm}
 $$
 
 Positive values indicate that the baseline has higher normalized entropy than
