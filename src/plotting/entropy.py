@@ -6,9 +6,23 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from src.globals.constants import DEFAULT_K
-from src.globals.paths import ENTROPY_GAPS_CSV, ENTROPY_PLOTS_DIR, LAYER_ENTROPY_CSV
-from src.plotting.primitives import plot_entropy_gaps, plot_entropy_metric
-from src.plotting.readers import read_entropy_gaps, read_layer_entropy
+from src.globals.paths import (
+    ENTROPY_GAPS_CSV,
+    ENTROPY_PLOTS_DIR,
+    ENTROPY_REPORT_JSON,
+    LAYER_ENTROPY_CSV,
+)
+from src.globals.series import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_ORDER, SERIES_SHUFFLE
+from src.plotting.primitives import (
+    plot_entropy_gaps,
+    plot_entropy_metric,
+    plot_entropy_pattern_distribution_grid,
+)
+from src.plotting.readers import (
+    read_entropy_gaps,
+    read_entropy_pattern_counts,
+    read_layer_entropy,
+)
 from src.utils.validation import require_positive_k
 
 
@@ -16,6 +30,7 @@ from src.utils.validation import require_positive_k
 class EntropyPlotPaths:
     layer_entropy_csv: Path = LAYER_ENTROPY_CSV
     entropy_gaps_csv: Path = ENTROPY_GAPS_CSV
+    entropy_report_json: Path = ENTROPY_REPORT_JSON
     output_dir: Path = ENTROPY_PLOTS_DIR
 
 
@@ -29,8 +44,9 @@ def create_entropy_plots(
 
     layer_entropy = read_layer_entropy(paths.layer_entropy_csv, k)
     entropy_gaps = read_entropy_gaps(paths.entropy_gaps_csv, k)
+    pattern_counts = read_entropy_pattern_counts(paths.entropy_report_json, k)
 
-    return [
+    outputs = [
         plot_entropy_metric(
             layer_entropy,
             paths.output_dir / "permutation_entropy.png",
@@ -53,3 +69,18 @@ def create_entropy_plots(
             k=k,
         ),
     ]
+    pattern_filenames = {
+        SERIES_FINAL: "final_pattern_distribution.png",
+        SERIES_SHUFFLE: "shuffle_pattern_distribution.png",
+        SERIES_GAUSSIAN: "gaussian_pattern_distribution.png",
+    }
+    for series in SERIES_ORDER:
+        outputs.append(
+            plot_entropy_pattern_distribution_grid(
+                pattern_counts[series],
+                paths.output_dir / pattern_filenames[series],
+                series=series,
+                k=k,
+            )
+        )
+    return outputs

@@ -344,6 +344,76 @@ def plot_entropy_gaps(frame: pd.DataFrame, output_path: Path, k: int) -> Path:
     return output_path
 
 
+def plot_entropy_pattern_distribution_grid(
+    pattern_counts: dict[str, dict[str, int]],
+    output_path: Path,
+    series: str,
+    k: int,
+) -> Path:
+    components = decomposition_components(k, include_original=False)
+    fig, axes = plt.subplots(3, 4, figsize=(20, 12), sharey=True)
+    axes_flat = axes.ravel()
+    global_max = 0.0
+    component_percentages: dict[str, tuple[list[str], np.ndarray]] = {}
+
+    for component in components:
+        counts = pattern_counts[component]
+        patterns = sorted(counts)
+        total = sum(counts.values())
+        if total <= 0:
+            raise ValueError(f"Pattern counts sum to zero for {series} {component}")
+        percentages = np.array([counts[pattern] / total for pattern in patterns])
+        component_percentages[component] = (patterns, percentages)
+        global_max = max(global_max, float(percentages.max()))
+
+    for axis, component in zip(axes_flat, components):
+        patterns, percentages = component_percentages[component]
+
+        axis.bar(
+            patterns,
+            percentages,
+            color=SERIES_COLORS[series],
+            alpha=0.8,
+            width=0.72,
+        )
+        axis.axhline(
+            1.0 / len(patterns),
+            color="black",
+            linestyle="--",
+            linewidth=0.8,
+            alpha=0.65,
+        )
+        axis.set_title(component)
+        axis.set_ylim(0.0, max(0.25, global_max * 1.18))
+        axis.tick_params(axis="x", labelrotation=35)
+
+    for axis in axes_flat[len(components):]:
+        axis.axis("off")
+
+    for axis in axes[:, 0]:
+        axis.set_ylabel("Pattern share")
+
+    handles = [
+        plt.Line2D(
+            [0],
+            [0],
+            color="black",
+            linestyle="--",
+            linewidth=0.8,
+            label="Uniform share",
+        )
+    ]
+    fig.legend(handles=handles, loc="upper right")
+    fig.suptitle(
+        f"Ordinal Pattern Distribution: {SERIES_LABELS[series]}",
+        fontsize=16,
+    )
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=GRID_FIGURE_DPI)
+    plt.close(fig)
+    return output_path
+
+
 def plot_volatility_metric(
     frame: pd.DataFrame,
     output_path: Path,
@@ -409,6 +479,100 @@ def plot_decomposition_layers(
 
     axes[-1].set_xlabel("Observation index")
     fig.savefig(output_path, dpi=GRID_FIGURE_DPI)
+    plt.close(fig)
+    return output_path
+
+
+def plot_abs_component_correlation_heatmap(
+    frame: pd.DataFrame,
+    output_path: Path,
+    title: str,
+    k: int,
+) -> Path:
+    components = decomposition_components(k, include_original=False)
+    abs_components = frame[components].abs()
+    correlation = abs_components.corr(method="pearson")
+
+    fig, ax = plt.subplots(figsize=(10, 8.5))
+    image = ax.imshow(
+        correlation.to_numpy(),
+        vmin=0.0,
+        vmax=1.0,
+        cmap="viridis",
+        aspect="equal",
+    )
+    ax.set_title(title)
+    ax.set_xticks(np.arange(len(components)))
+    ax.set_yticks(np.arange(len(components)))
+    ax.set_xticklabels(components, rotation=45, ha="right")
+    ax.set_yticklabels(components)
+
+    for row_index, component_row in enumerate(components):
+        for column_index, component_column in enumerate(components):
+            value = float(correlation.loc[component_row, component_column])
+            text_color = "white" if value < 0.55 else "black"
+            ax.text(
+                column_index,
+                row_index,
+                f"{value:.2f}",
+                ha="center",
+                va="center",
+                color=text_color,
+                fontsize=7,
+            )
+
+    colorbar = fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04)
+    colorbar.set_label("Pearson correlation of absolute components")
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=FIGURE_DPI)
+    plt.close(fig)
+    return output_path
+
+
+def plot_abs_component_correlation_difference_heatmap(
+    final_frame: pd.DataFrame,
+    baseline_frame: pd.DataFrame,
+    output_path: Path,
+    title: str,
+    k: int,
+) -> Path:
+    components = decomposition_components(k, include_original=False)
+    final_correlation = final_frame[components].abs().corr(method="pearson")
+    baseline_correlation = baseline_frame[components].abs().corr(method="pearson")
+    difference = final_correlation - baseline_correlation
+
+    fig, ax = plt.subplots(figsize=(10, 8.5))
+    image = ax.imshow(
+        difference.to_numpy(),
+        vmin=-1.0,
+        vmax=1.0,
+        cmap="coolwarm",
+        aspect="equal",
+    )
+    ax.set_title(title)
+    ax.set_xticks(np.arange(len(components)))
+    ax.set_yticks(np.arange(len(components)))
+    ax.set_xticklabels(components, rotation=45, ha="right")
+    ax.set_yticklabels(components)
+
+    for row_index, component_row in enumerate(components):
+        for column_index, component_column in enumerate(components):
+            value = float(difference.loc[component_row, component_column])
+            text_color = "white" if abs(value) > 0.5 else "black"
+            ax.text(
+                column_index,
+                row_index,
+                f"{value:.2f}",
+                ha="center",
+                va="center",
+                color=text_color,
+                fontsize=7,
+            )
+
+    colorbar = fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04)
+    colorbar.set_label("Final minus shuffled correlation")
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path
 

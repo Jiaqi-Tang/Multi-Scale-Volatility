@@ -24,6 +24,11 @@ def parse_args() -> argparse.Namespace:
         default=Path("results/entropy/entropy_gaps.csv"),
     )
     parser.add_argument(
+        "--entropy-report-json",
+        type=Path,
+        default=Path("results/entropy/entropy_report.json"),
+    )
+    parser.add_argument(
         "--output-dir",
         type=Path,
         default=Path("plots/results/entropy"),
@@ -38,6 +43,7 @@ def main() -> None:
         EntropyPlotPaths(
             layer_entropy_csv=args.layer_entropy_csv,
             entropy_gaps_csv=args.entropy_gaps_csv,
+            entropy_report_json=args.entropy_report_json,
             output_dir=args.output_dir,
         ),
         k=args.k,

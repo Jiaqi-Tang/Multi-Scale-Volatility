@@ -13,6 +13,8 @@ from src.globals.paths import (
     SHUFFLE_DECOMPOSITION_CSV,
 )
 from src.plotting.primitives import (
+    plot_abs_component_correlation_heatmap,
+    plot_abs_component_correlation_difference_heatmap,
     plot_decomposition_layers,
     plot_layer_acf_grid,
     plot_layer_histogram_grid,
@@ -76,6 +78,31 @@ def create_decomposition_plots(
         plot_layer_qq_grid(
             final_frame,
             paths.output_dir / "layer_qq_gaussian_grid.png",
+            k=k,
+        ),
+        plot_abs_component_correlation_heatmap(
+            final_frame,
+            paths.output_dir / "final_abs_component_correlation.png",
+            title="EUR/USD Final Absolute Component Correlation",
+            k=k,
+        ),
+        plot_abs_component_correlation_heatmap(
+            shuffle_frame,
+            paths.output_dir / "shuffle_abs_component_correlation.png",
+            title="Shuffled Baseline Absolute Component Correlation",
+            k=k,
+        ),
+        plot_abs_component_correlation_heatmap(
+            gaussian_frame,
+            paths.output_dir / "gaussian_abs_component_correlation.png",
+            title="Gaussian Baseline Absolute Component Correlation",
+            k=k,
+        ),
+        plot_abs_component_correlation_difference_heatmap(
+            final_frame,
+            shuffle_frame,
+            paths.output_dir / "final_minus_shuffle_abs_component_correlation.png",
+            title="Absolute Component Correlation Difference: Final Minus Shuffled",
             k=k,
         ),
         plot_layer_acf_grid(
