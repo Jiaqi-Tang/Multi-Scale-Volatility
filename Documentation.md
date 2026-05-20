@@ -883,3 +883,540 @@ A_11 entropy_gap_gaussian: -0.00011979411067764012
 
 The small magnitude of the gaps is consistent with the high normalized entropy
 observed across all series and components.
+
+---
+
+# Plot Reference
+
+All return-series plots use observation index rather than timestamp on the
+x-axis unless stated otherwise. Timestamps are retained in the underlying
+datasets for later event lookup, but they are not used as plot axes in this
+version.
+
+## Return EDA Plots
+
+Folder:
+
+```text
+plots/eda/returns
+```
+
+**Return line plots**
+
+```text
+final_returns_line.png
+shuffle_returns_line.png
+gaussian_returns_line.png
+```
+
+Each plot shows one return series:
+
+$$
+R^*,\quad R^{shuffle},\quad R^{BM}
+$$
+
+respectively.
+
+x-axis:
+
+$$
+i = 1,\ldots,N^*
+$$
+
+y-axis:
+
+$$
+r_i
+$$
+
+**Final vs Gaussian histogram**
+
+```text
+final_vs_gaussian_histogram.png
+```
+
+This plot compares the empirical distribution of:
+
+$$
+R^*
+$$
+
+against:
+
+$$
+R^{BM}
+$$
+
+using density-normalized histograms. Vertical lines mark each series mean and
+median.
+
+**Final vs Gaussian ECDF**
+
+```text
+final_vs_gaussian_ecdf.png
+```
+
+For a return series $R$, the empirical cumulative distribution function is:
+
+$$
+\hat{F}(x)
+=
+\frac{1}{N^*}\sum_{i=1}^{N^*}\mathbf{1}\{r_i \leq x\}
+$$
+
+The plot compares:
+
+$$
+\hat{F}_{EURUSD}(x)
+$$
+
+and:
+
+$$
+\hat{F}_{BM}(x)
+$$
+
+**Final QQ plot against Gaussian**
+
+```text
+final_qq_gaussian.png
+```
+
+The x-axis is the theoretical quantile from:
+
+$$
+\mathcal{N}(0, Var(R^*))
+$$
+
+The y-axis is the corresponding empirical quantile of:
+
+$$
+R^*
+$$
+
+The diagonal reference line is:
+
+$$
+y=x
+$$
+
+**Return autocorrelation plots**
+
+```text
+final_vs_baselines_returns_acf.png
+final_vs_baselines_abs_returns_acf.png
+```
+
+For a series $X_i$, autocorrelation at lag $\ell$ is:
+
+$$
+\rho_X(\ell)
+=
+Corr(X_i, X_{i-\ell})
+$$
+
+The first plot uses:
+
+$$
+X_i = r_i
+$$
+
+The second plot uses:
+
+$$
+X_i = |r_i|
+$$
+
+Each plot compares:
+
+$$
+R^*,\quad R^{shuffle},\quad R^{BM}
+$$
+
+Dashed reference bands are:
+
+$$
+\pm \frac{1.96}{\sqrt{N^*}}
+$$
+
+## Decomposition EDA Plots
+
+Folder:
+
+```text
+plots/eda/decomposition
+```
+
+Let:
+
+$$
+X_c \in \{D_1,\ldots,D_{11},A_{11}\}
+$$
+
+denote a decomposition component.
+
+**Layer plots**
+
+```text
+final_layers.png
+shuffle_layers.png
+gaussian_layers.png
+```
+
+Each figure contains stacked panels for:
+
+```text
+original
+D_01
+...
+D_11
+A_11
+```
+
+x-axis:
+
+$$
+i = 1,\ldots,N^*
+$$
+
+y-axis for component $c$:
+
+$$
+x_{c,i}
+$$
+
+**Layer distribution grid**
+
+```text
+layer_histograms_grid.png
+```
+
+This is a $3 \times 4$ grid over:
+
+$$
+D_1,\ldots,D_{11},A_{11}
+$$
+
+Each subplot compares the density-normalized distribution of the final EUR/USD
+component against the Gaussian baseline component.
+
+**Layer QQ grid**
+
+```text
+layer_qq_gaussian_grid.png
+```
+
+This is a $3 \times 4$ grid over:
+
+$$
+D_1,\ldots,D_{11},A_{11}
+$$
+
+For each component $c$, the x-axis is the theoretical quantile from:
+
+$$
+\mathcal{N}(0, Var(X_c^{EURUSD}))
+$$
+
+and the y-axis is the empirical quantile of:
+
+$$
+X_c^{EURUSD}
+$$
+
+**Layer autocorrelation grids**
+
+```text
+layer_acf_returns_short_scales.png
+layer_acf_abs_returns_short_scales.png
+layer_acf_returns_long_scales.png
+layer_acf_abs_returns_long_scales.png
+```
+
+For a component $X_c$, the signed-component autocorrelation is:
+
+$$
+\rho_c(\ell)
+=
+Corr(x_{c,i}, x_{c,i-\ell})
+$$
+
+The absolute-component autocorrelation is:
+
+$$
+\rho_c^{abs}(\ell)
+=
+Corr(|x_{c,i}|, |x_{c,i-\ell}|)
+$$
+
+Short-scale ACF plots contain:
+
+$$
+D_1,\ldots,D_6
+$$
+
+Long-scale ACF plots contain:
+
+$$
+D_7,\ldots,D_{11},A_{11}
+$$
+
+For larger-scale components, deterministic repeated block values are compressed
+before computing autocorrelation. The x-axis is then mapped back to original
+5-minute index lags.
+
+**Absolute component correlation heatmaps**
+
+```text
+final_abs_component_correlation.png
+shuffle_abs_component_correlation.png
+gaussian_abs_component_correlation.png
+```
+
+For each series, the plotted matrix is:
+
+$$
+\rho_{c,d}^{abs}
+=
+Corr(|X_c|, |X_d|)
+$$
+
+where:
+
+$$
+c,d \in \{D_1,\ldots,D_{11},A_{11}\}
+$$
+
+The values are computed on the fully expanded, index-aligned decomposition
+components.
+
+**Final minus shuffled absolute component correlation**
+
+```text
+final_minus_shuffle_abs_component_correlation.png
+```
+
+The plotted matrix is:
+
+$$
+\rho_{c,d}^{EURUSD,abs}
+-
+\rho_{c,d}^{shuffle,abs}
+$$
+
+Positive values mean the final EUR/USD components have higher absolute
+cross-component correlation than the shuffled baseline for that component pair.
+
+## Volatility Result Plots
+
+Folder:
+
+```text
+plots/results/volatility
+```
+
+All volatility plots use categorical component x-axis.
+
+**Energy-share plots**
+
+```text
+detail_energy_share.png
+total_component_energy_share.png
+detail_energy_share_difference.png
+total_component_energy_share_difference.png
+```
+
+`detail_energy_share.png` plots:
+
+$$
+p_k^{detail}
+=
+\frac{E(D_k)}{\sum_{j=1}^{11}E(D_j)}
+$$
+
+for:
+
+$$
+D_1,\ldots,D_{11}
+$$
+
+`total_component_energy_share.png` plots:
+
+$$
+p_c^{total}
+=
+\frac{E_c}{\sum_{j=1}^{11}E(D_j)+E(A_{11})}
+$$
+
+for:
+
+$$
+c \in \{D_1,\ldots,D_{11},A_{11}\}
+$$
+
+The difference plots show:
+
+$$
+p_c^{EURUSD} - p_c^{shuffle}
+$$
+
+and:
+
+$$
+p_c^{EURUSD} - p_c^{BM}
+$$
+
+with a horizontal zero reference line.
+
+**RMS volatility plots**
+
+```text
+rms_volatility.png
+annualized_rms_volatility.png
+rms_volatility_difference.png
+```
+
+`rms_volatility.png` plots:
+
+$$
+\sigma_c^{RMS}
+=
+\sqrt{\frac{1}{N^*}E_c}
+$$
+
+for:
+
+$$
+c \in \{D_1,\ldots,D_{11},A_{11}\}
+$$
+
+`annualized_rms_volatility.png` plots:
+
+$$
+\sigma_{c,ann}^{RMS}
+=
+\sigma_c^{RMS}\sqrt{252 \times 24 \times 12}
+$$
+
+`rms_volatility_difference.png` plots:
+
+$$
+\sigma_c^{EURUSD,RMS} - \sigma_c^{shuffle,RMS}
+$$
+
+and:
+
+$$
+\sigma_c^{EURUSD,RMS} - \sigma_c^{BM,RMS}
+$$
+
+## Entropy Result Plots
+
+Folder:
+
+```text
+plots/results/entropy
+```
+
+All entropy plots use categorical component x-axis.
+
+**Layer entropy plots**
+
+```text
+permutation_entropy.png
+normalized_entropy.png
+```
+
+`permutation_entropy.png` plots:
+
+$$
+H_c = -\sum_{j=1}^{6}q_j\log(q_j)
+$$
+
+for:
+
+$$
+c \in \{D_1,\ldots,D_{11},A_{11}\}
+$$
+
+`normalized_entropy.png` plots:
+
+$$
+H_c^{norm}
+=
+\frac{H_c}{\log(6)}
+$$
+
+Both plots compare:
+
+$$
+R^*,\quad R^{shuffle},\quad R^{BM}
+$$
+
+**Entropy gap plot**
+
+```text
+entropy_gaps.png
+```
+
+This plot shows:
+
+$$
+\Delta H_c^{shuffle}
+=
+H_c^{shuffle,norm} - H_c^{EURUSD,norm}
+$$
+
+and:
+
+$$
+\Delta H_c^{BM}
+=
+H_c^{BM,norm} - H_c^{EURUSD,norm}
+$$
+
+The horizontal reference line is:
+
+$$
+\Delta H = 0
+$$
+
+**Ordinal pattern distribution grids**
+
+```text
+final_pattern_distribution.png
+shuffle_pattern_distribution.png
+gaussian_pattern_distribution.png
+```
+
+Each figure is a $3 \times 4$ grid over:
+
+$$
+D_1,\ldots,D_{11},A_{11}
+$$
+
+For each component, the bar heights are ordinal-pattern shares:
+
+$$
+\hat{q}_j
+=
+\frac{\#\{\text{ordinal windows with pattern }j\}}
+{\#\{\text{ordinal windows}\}}
+$$
+
+for the six possible patterns:
+
+```text
+012
+021
+102
+120
+201
+210
+```
+
+The dashed reference line is the uniform share:
+
+$$
+\frac{1}{6}
+$$

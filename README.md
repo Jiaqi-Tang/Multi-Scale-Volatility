@@ -1,4 +1,4 @@
-# Multi-Scale Volatility-Entropy Decomposition of EUR/USD Returns
+# Multi-Scale Volatility Structure in EUR/USD Returns
 
 Currently in development.
 
