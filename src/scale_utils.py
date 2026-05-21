@@ -52,9 +52,12 @@ def component_scale_minutes(
     component: str,
     base_interval_minutes: int = BASE_INTERVAL_MINUTES,
 ) -> int:
+    kind = component_type(component)
     scale = component_scale(component)
     if scale == 0:
         return base_interval_minutes
+    if kind == "detail":
+        return base_interval_minutes * (2 ** (scale - 1))
     return base_interval_minutes * (2**scale)
 
 

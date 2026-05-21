@@ -3,16 +3,16 @@
   "input_rows": 735232,
   "timestamp_start_utc": "2016-01-03 22:05:00+00:00",
   "timestamp_end_utc": "2025-12-30 06:25:00+00:00",
-  "empirical_mean_log_return": 1.381445428226864e-07,
+  "empirical_mean_log_return": 1.3814454282268642e-07,
   "empirical_population_variance_log_return": 8.257150232019612e-08,
   "empirical_population_std_log_return": 0.00028735257493225306,
   "shuffle_baseline": {
     "seed": 137,
     "output_csv": "data\\baselines\\eurusd_5m_log_returns_shuffle.csv",
     "rows": 735232,
-    "mean_log_return": 1.381445428226864e-07,
-    "population_variance_log_return": 8.257150232019612e-08,
-    "population_std_log_return": 0.00028735257493225306,
+    "mean_log_return": 1.381445428226863e-07,
+    "population_variance_log_return": 8.257150232019614e-08,
+    "population_std_log_return": 0.0002873525749322531,
     "min_log_return": -0.0097635255221106,
     "max_log_return": 0.0126936410859073
   },
@@ -22,9 +22,9 @@
     "rows": 735232,
     "target_mean_log_return": 0.0,
     "target_population_variance_log_return": 8.257150232019612e-08,
-    "realized_mean_log_return": 1.1733939639875955e-07,
-    "realized_population_variance_log_return": 8.249276080303108e-08,
-    "realized_population_std_log_return": 0.0002872155302260501,
+    "realized_mean_log_return": 1.1733939639875951e-07,
+    "realized_population_variance_log_return": 8.249276080303111e-08,
+    "realized_population_std_log_return": 0.00028721553022605014,
     "min_log_return": -0.0015116429800731662,
     "max_log_return": 0.0013819795205624716
   }

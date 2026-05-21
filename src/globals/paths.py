@@ -38,4 +38,5 @@ EDA_PLOTS_DIR = Path("plots/eda/returns")
 DECOMPOSITION_PLOTS_DIR = Path("plots/eda/decomposition")
 VOLATILITY_PLOTS_DIR = Path("plots/results/volatility")
 ENTROPY_PLOTS_DIR = Path("plots/results/entropy")
+MEMO_PLOTS_DIR = Path("plots/memo")
 

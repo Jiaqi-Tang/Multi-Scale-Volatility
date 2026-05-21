@@ -16,6 +16,7 @@ SCRIPT_ORDER = [
     "run_decomposition_plots.py",
     "run_volatility_plots.py",
     "run_entropy_plots.py",
+    "run_memo_plots.py",
 ]
 
 

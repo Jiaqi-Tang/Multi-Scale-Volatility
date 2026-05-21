@@ -10,6 +10,7 @@ from src.plotting.decomposition import (
 )
 from src.plotting.eda import PlotPaths, create_eda_plots
 from src.plotting.entropy import EntropyPlotPaths, create_entropy_plots
+from src.plotting.memo import MemoPlotPaths, create_memo_plots
 from src.plotting.primitives import (
     plot_acf_comparison,
     plot_abs_component_correlation_heatmap,
@@ -33,11 +34,13 @@ from src.plotting.volatility import VolatilityPlotPaths, create_volatility_plots
 __all__ = [
     "DecompositionPlotPaths",
     "EntropyPlotPaths",
+    "MemoPlotPaths",
     "PlotPaths",
     "VolatilityPlotPaths",
     "create_decomposition_plots",
     "create_eda_plots",
     "create_entropy_plots",
+    "create_memo_plots",
     "create_volatility_plots",
     "plot_acf_comparison",
     "plot_abs_component_correlation_heatmap",
