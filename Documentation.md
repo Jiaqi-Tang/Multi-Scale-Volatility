@@ -458,6 +458,19 @@ $$
 B_k = 2^k
 $$
 
+For reporting and plotting, detail-layer horizons are indexed by the smaller
+time scale in the adjacent-scale difference. Thus $D_k$ is labeled with:
+
+$$
+T_k^{detail} = 5 \times 2^{k-1}\text{ minutes}
+$$
+
+The final approximation layer $A_{11}$ is labeled with its full block horizon:
+
+$$
+T_{11}^{approx} = 5 \times 2^{11}\text{ minutes} \approx 7.11\text{ days}
+$$
+
 For each series:
 
 $$
@@ -645,6 +658,18 @@ detail_energy_share
 total_component_energy_share
 ```
 
+For detail components, `scale_minutes` follows the smaller-time convention:
+
+$$
+\text{scale\_minutes}(D_k) = 5 \times 2^{k-1}
+$$
+
+For the approximation component:
+
+$$
+\text{scale\_minutes}(A_{11}) = 5 \times 2^{11}
+$$
+
 ## Results
 
 For the final EUR/USD series, most detail-layer energy is concentrated at the
@@ -692,7 +717,7 @@ $$
 R^{\ast},\quad R^{shuffle},\quad R^{BM}
 $$
 
-The embedding dimension and are:
+The embedding dimension and delay are:
 
 $$
 m = 3, \quad \tau = 1
@@ -782,6 +807,18 @@ ordinal_windows
 permutation_entropy
 normalized_entropy
 ```
+
+For detail components, `scale_minutes` follows the smaller-time convention:
+
+$$
+\text{scale\_minutes}(D_k) = 5 \times 2^{k-1}
+$$
+
+For the approximation component:
+
+$$
+\text{scale\_minutes}(A_{11}) = 5 \times 2^{11}
+$$
 
 Ordinal pattern counts are recorded in `results/entropy/entropy_report.json`.
 
@@ -912,7 +949,7 @@ gaussian_returns_line.png
 Each plot shows one return series:
 
 $$
-R^*,\quad R^{shuffle},\quad R^{BM}
+R^{\ast},\quad R^{shuffle},\quad R^{BM}
 $$
 
 respectively.
@@ -920,7 +957,7 @@ respectively.
 x-axis:
 
 $$
-i = 1,\ldots,N^*
+i = 1,\ldots,N^{\ast}
 $$
 
 y-axis:
@@ -938,7 +975,7 @@ final_vs_gaussian_histogram.png
 This plot compares the empirical distribution of:
 
 $$
-R^*
+R^{\ast}
 $$
 
 against:
@@ -959,9 +996,7 @@ final_vs_gaussian_ecdf.png
 For a return series $R$, the empirical cumulative distribution function is:
 
 $$
-\hat{F}(x)
-=
-\frac{1}{N^*}\sum_{i=1}^{N^*}\mathbf{1}\{r_i \leq x\}
+\hat{F}(x) = \frac{1}{N^{\ast}}\sum_{i=1}^{N^{\ast}}\mathbf{1}\{r_i \leq x\}
 $$
 
 The plot compares:
@@ -985,13 +1020,13 @@ final_qq_gaussian.png
 The x-axis is the theoretical quantile from:
 
 $$
-\mathcal{N}(0, Var(R^*))
+\mathcal{N}(0, \mathrm{Var}(R^{\ast}))
 $$
 
 The y-axis is the corresponding empirical quantile of:
 
 $$
-R^*
+R^{\ast}
 $$
 
 The diagonal reference line is:
@@ -1010,9 +1045,7 @@ final_vs_baselines_abs_returns_acf.png
 For a series $X_i$, autocorrelation at lag $\ell$ is:
 
 $$
-\rho_X(\ell)
-=
-Corr(X_i, X_{i-\ell})
+\rho_X(\ell) = \mathrm{Corr}(X_i, X_{i-\ell})
 $$
 
 The first plot uses:
@@ -1030,13 +1063,13 @@ $$
 Each plot compares:
 
 $$
-R^*,\quad R^{shuffle},\quad R^{BM}
+R^{\ast},\quad R^{shuffle},\quad R^{BM}
 $$
 
 Dashed reference bands are:
 
 $$
-\pm \frac{1.96}{\sqrt{N^*}}
+\pm \frac{1.96}{\sqrt{N^{\ast}}}
 $$
 
 ## Decomposition EDA Plots
@@ -1076,7 +1109,7 @@ A_11
 x-axis:
 
 $$
-i = 1,\ldots,N^*
+i = 1,\ldots,N^{\ast}
 $$
 
 y-axis for component $c$:
@@ -1115,7 +1148,7 @@ $$
 For each component $c$, the x-axis is the theoretical quantile from:
 
 $$
-\mathcal{N}(0, Var(X_c^{EURUSD}))
+\mathcal{N}(0, \mathrm{Var}(X_c^{EURUSD}))
 $$
 
 and the y-axis is the empirical quantile of:
@@ -1136,17 +1169,13 @@ layer_acf_abs_returns_long_scales.png
 For a component $X_c$, the signed-component autocorrelation is:
 
 $$
-\rho_c(\ell)
-=
-Corr(x_{c,i}, x_{c,i-\ell})
+\rho_c(\ell) = \mathrm{Corr}(x_{c,i}, x_{c,i-\ell})
 $$
 
 The absolute-component autocorrelation is:
 
 $$
-\rho_c^{abs}(\ell)
-=
-Corr(|x_{c,i}|, |x_{c,i-\ell}|)
+\rho_c^{abs}(\ell) = \mathrm{Corr}(|x_{c,i}|, |x_{c,i-\ell}|)
 $$
 
 Short-scale ACF plots contain:
@@ -1176,9 +1205,7 @@ gaussian_abs_component_correlation.png
 For each series, the plotted matrix is:
 
 $$
-\rho_{c,d}^{abs}
-=
-Corr(|X_c|, |X_d|)
+\rho_{c,d}^{abs} = \mathrm{Corr}(|X_c|, |X_d|)
 $$
 
 where:
@@ -1199,9 +1226,7 @@ final_minus_shuffle_abs_component_correlation.png
 The plotted matrix is:
 
 $$
-\rho_{c,d}^{EURUSD,abs}
--
-\rho_{c,d}^{shuffle,abs}
+\rho_{c,d}^{EURUSD,abs} - \rho_{c,d}^{shuffle,abs}
 $$
 
 Positive values mean the final EUR/USD components have higher absolute
@@ -1229,9 +1254,7 @@ total_component_energy_share_difference.png
 `detail_energy_share.png` plots:
 
 $$
-p_k^{detail}
-=
-\frac{E(D_k)}{\sum_{j=1}^{11}E(D_j)}
+p_k^{detail} = \frac{E(D_k)}{\sum_{j=1}^{11}E(D_j)}
 $$
 
 for:
@@ -1243,9 +1266,7 @@ $$
 `total_component_energy_share.png` plots:
 
 $$
-p_c^{total}
-=
-\frac{E_c}{\sum_{j=1}^{11}E(D_j)+E(A_{11})}
+p_c^{total} = \frac{E_c}{\sum_{j=1}^{11}E(D_j)+E(A_{11})}
 $$
 
 for:
@@ -1279,9 +1300,7 @@ rms_volatility_difference.png
 `rms_volatility.png` plots:
 
 $$
-\sigma_c^{RMS}
-=
-\sqrt{\frac{1}{N^*}E_c}
+\sigma_c^{RMS} = \sqrt{\frac{1}{N^{\ast}}E_c}
 $$
 
 for:
@@ -1293,9 +1312,7 @@ $$
 `annualized_rms_volatility.png` plots:
 
 $$
-\sigma_{c,ann}^{RMS}
-=
-\sigma_c^{RMS}\sqrt{252 \times 24 \times 12}
+\sigma_{c,ann}^{RMS} = \sigma_c^{RMS}\sqrt{252 \times 24 \times 12}
 $$
 
 `rms_volatility_difference.png` plots:
@@ -1342,15 +1359,13 @@ $$
 `normalized_entropy.png` plots:
 
 $$
-H_c^{norm}
-=
-\frac{H_c}{\log(6)}
+H_c^{norm} = \frac{H_c}{\log(6)}
 $$
 
 Both plots compare:
 
 $$
-R^*,\quad R^{shuffle},\quad R^{BM}
+R^{\ast},\quad R^{shuffle},\quad R^{BM}
 $$
 
 **Entropy gap plot**
@@ -1362,17 +1377,13 @@ entropy_gaps.png
 This plot shows:
 
 $$
-\Delta H_c^{shuffle}
-=
-H_c^{shuffle,norm} - H_c^{EURUSD,norm}
+\Delta H_c^{shuffle} = H_c^{shuffle,norm} - H_c^{EURUSD,norm}
 $$
 
 and:
 
 $$
-\Delta H_c^{BM}
-=
-H_c^{BM,norm} - H_c^{EURUSD,norm}
+\Delta H_c^{BM} = H_c^{BM,norm} - H_c^{EURUSD,norm}
 $$
 
 The horizontal reference line is:
@@ -1398,10 +1409,7 @@ $$
 For each component, the bar heights are ordinal-pattern shares:
 
 $$
-\hat{q}_j
-=
-\frac{\#\{\text{ordinal windows with pattern }j\}}
-{\#\{\text{ordinal windows}\}}
+\hat{q}_j = \frac{n_j}{n_{\mathrm{windows}}}
 $$
 
 for the six possible patterns:
@@ -1419,4 +1427,123 @@ The dashed reference line is the uniform share:
 
 $$
 \frac{1}{6}
+$$
+
+## Memo Plots
+
+Folder:
+
+```text
+plots/memo
+```
+
+Memo plots are presentation-oriented figures used in `Memo.md`. They are derived
+from the same datasets and result tables documented above.
+
+**Figure 1: Decomposition example**
+
+```text
+figure_01_decomposition_example.png
+```
+
+Shows selected components from the EUR/USD decomposition:
+
+$$
+R^{\ast},\quad D_1,\quad D_2,\quad D_5,\quad D_8,\quad D_{11},\quad A_{11}
+$$
+
+with observation index on the x-axis.
+
+**Figure 2: Return distribution**
+
+```text
+figure_02_return_distribution.png
+```
+
+Combines a QQ plot of $R^{\ast}$ against:
+
+$$
+\mathcal{N}(0, \mathrm{Var}(R^{\ast}))
+$$
+
+with a zoomed density histogram comparing:
+
+$$
+R^{\ast}
+$$
+
+against:
+
+$$
+R^{BM}
+$$
+
+**Figure 3: Absolute-return autocorrelation**
+
+```text
+figure_03_abs_return_acf.png
+```
+
+Plots:
+
+$$
+\mathrm{Corr}(|r_i|, |r_{i-\ell}|)
+$$
+
+for:
+
+$$
+R^{\ast},\quad R^{shuffle},\quad R^{BM}
+$$
+
+**Figure 4: Energy profile**
+
+```text
+figure_04_energy_profile.png
+```
+
+Shows detail energy share:
+
+$$
+p_k^{detail} = \frac{E(D_k)}{\sum_{j=1}^{11}E(D_j)}
+$$
+
+and excess detail energy share relative to shuffled and Gaussian baselines.
+
+**Figure 5: Cross-scale correlation**
+
+```text
+figure_05_cross_scale_correlation.png
+```
+
+Shows:
+
+$$
+\mathrm{Corr}(|X_c|, |X_d|)
+$$
+
+for EUR/USD components, and the difference against the shuffled baseline.
+
+**Figure 6: Entropy profile**
+
+```text
+figure_06_entropy_profile.png
+```
+
+Shows normalized permutation entropy:
+
+$$
+H_c^{norm} = \frac{H_c}{\log(6)}
+$$
+
+for EUR/USD and baseline components. The dashed reference line uses:
+
+$$
+q = \left(\frac{1}{8}, \frac{3}{16}, \frac{3}{16}, \frac{3}{16}, \frac{3}{16}, \frac{1}{8}\right)
+$$
+
+and:
+
+$$
+H_{ref}^{norm} = \frac{-\sum_{j=1}^{6}q_j\log(q_j)}{\log(6)} \approx 0.9908
 $$
