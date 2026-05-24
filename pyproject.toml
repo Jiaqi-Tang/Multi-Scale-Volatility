@@ -21,7 +21,9 @@ ve = "src.cli:main"
 packages = [
   "src",
   "src.globals",
+  "src.preprocessing",
   "src.plotting",
+  "src.plotting.primitives",
+  "src.stats",
   "src.utils",
 ]
-

@@ -22,8 +22,8 @@ from src.globals.paths import (
     VOLATILITY_CSV,
 )
 from src.globals.series import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_SHUFFLE
+from src.plotting.primitives.distributions import add_mean_median_lines
 from src.plotting.readers import read_decomposition, read_returns
-from src.plotting.stats import autocorrelation, normal_quantiles_for_values
 from src.plotting.style import (
     FIGURE_DPI,
     FINAL_COLOR,
@@ -31,6 +31,12 @@ from src.plotting.style import (
     GAUSSIAN_COLOR,
     GAUSSIAN_DARK_COLOR,
     SHUFFLE_COLOR,
+)
+from src.stats import (
+    absolute_component_correlation,
+    absolute_component_correlation_difference,
+    autocorrelation,
+    normal_quantiles_for_values,
 )
 from src.utils.validation import require_positive_k
 from src.scale_utils import decomposition_components
@@ -177,8 +183,13 @@ def plot_memo_return_distribution(
         color=GAUSSIAN_COLOR,
         label="Gaussian baseline",
     )
-    _add_mean_median_lines(histogram_axis, final_returns, FINAL_DARK_COLOR)
-    _add_mean_median_lines(histogram_axis, gaussian_returns, GAUSSIAN_DARK_COLOR)
+    add_mean_median_lines(histogram_axis, final_returns, "EUR/USD", FINAL_DARK_COLOR)
+    add_mean_median_lines(
+        histogram_axis,
+        gaussian_returns,
+        "Gaussian",
+        GAUSSIAN_DARK_COLOR,
+    )
     histogram_axis.set_title("Return Distribution (zoomed to [-0.0015, 0.0015])")
     histogram_axis.set_xlabel("5m log return")
     histogram_axis.set_ylabel("Density")
@@ -211,21 +222,6 @@ def plot_memo_return_distribution(
     fig.savefig(output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path
-
-
-def _add_mean_median_lines(
-    axis: plt.Axes,
-    values: np.ndarray,
-    color: str,
-) -> None:
-    axis.axvline(float(np.mean(values)), color=color, linewidth=1.0, alpha=0.85)
-    axis.axvline(
-        float(np.median(values)),
-        color=color,
-        linestyle="--",
-        linewidth=1.0,
-        alpha=0.85,
-    )
 
 
 def plot_memo_abs_return_acf(
@@ -367,9 +363,12 @@ def plot_memo_cross_scale_correlation(
     same_scale: bool = False,
 ) -> Path:
     components = decomposition_components(k, include_original=False)
-    final_corr = final_decomposition[components].abs().corr(method="pearson")
-    shuffle_corr = shuffle_decomposition[components].abs().corr(method="pearson")
-    excess_corr = final_corr - shuffle_corr
+    final_corr = absolute_component_correlation(final_decomposition, components)
+    excess_corr = absolute_component_correlation_difference(
+        final_decomposition,
+        shuffle_decomposition,
+        components,
+    )
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 6.2))
     final_axis, excess_axis = axes
