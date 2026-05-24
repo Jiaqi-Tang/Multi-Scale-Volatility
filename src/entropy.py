@@ -37,6 +37,7 @@ from src.globals.series import (
     SERIES_ORDER,
     SERIES_SHUFFLE,
 )
+from src.utils.artifact_io import write_csv
 from src.utils.json_utils import write_json
 from src.utils.validation import require_finite_array, require_positive_k
 
@@ -121,10 +122,10 @@ def compute_entropy_metrics(
         series_report[item.name] = item_report
 
     layer_entropy = pd.DataFrame(rows)
-    layer_entropy.to_csv(paths.layer_entropy_csv, index=False)
+    write_csv(layer_entropy, paths.layer_entropy_csv, index=False)
 
     entropy_gaps = _compute_entropy_gaps(layer_entropy)
-    entropy_gaps.to_csv(paths.entropy_gaps_csv, index=False)
+    write_csv(entropy_gaps, paths.entropy_gaps_csv, index=False)
 
     report = {
         "K": k,

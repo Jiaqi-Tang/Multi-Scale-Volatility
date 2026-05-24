@@ -18,6 +18,7 @@ from src.globals.paths import (
     GAUSSIAN_RETURNS_CSV,
     SHUFFLE_RETURNS_CSV,
 )
+from src.utils.artifact_io import write_csv
 from src.utils.json_utils import write_json
 
 
@@ -78,8 +79,8 @@ def create_baselines(
     gaussian_frame = pd.DataFrame(
         {TIMESTAMP_UTC: timestamps, LOG_RETURN: gaussian_returns}
     )
-    shuffle_frame.to_csv(paths.shuffle_csv, index=False)
-    gaussian_frame.to_csv(paths.gaussian_csv, index=False)
+    write_csv(shuffle_frame, paths.shuffle_csv, index=False)
+    write_csv(gaussian_frame, paths.gaussian_csv, index=False)
 
     report = {
         "input_csv": str(paths.input_csv),

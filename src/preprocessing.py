@@ -20,6 +20,7 @@ from src.globals.paths import (
     PREPROCESSING_REPORT_JSON,
     RAW_METATRADER_DIR,
 )
+from src.utils.artifact_io import write_csv
 from src.utils.json_utils import json_scalar, write_json
 from src.utils.time_utils import iso_or_none
 
@@ -262,15 +263,15 @@ def run_preprocessing(paths: PreprocessingPaths | None = None) -> dict[str, Any]
 
     clean_1m_frame, clean_1m_report = clean_1m(raw)
     report.update(clean_1m_report)
-    clean_1m_frame.to_csv(paths.clean_1m_csv, index=False)
+    write_csv(clean_1m_frame, paths.clean_1m_csv, index=False)
 
     ohlc_5m, ohlc_report = build_5m_ohlc(clean_1m_frame)
     report.update(ohlc_report)
-    ohlc_5m.to_csv(paths.ohlc_5m_csv, index=False)
+    write_csv(ohlc_5m, paths.ohlc_5m_csv, index=False)
 
     clean_returns, returns_report = build_clean_returns(ohlc_5m)
     report.update(returns_report)
-    clean_returns.to_csv(paths.clean_returns_csv, index=False)
+    write_csv(clean_returns, paths.clean_returns_csv, index=False)
 
     report["outputs"] = {
         "clean_1m_csv": str(paths.clean_1m_csv),

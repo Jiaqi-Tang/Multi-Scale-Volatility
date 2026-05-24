@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
 from src.globals.columns import LOG_RETURN, PREVIOUS_TIMESTAMP_UTC, TIMESTAMP_UTC
 from src.globals.constants import BASE_INTERVAL_MINUTES, DEFAULT_K
 from src.globals.paths import CLEAN_RETURNS_CSV, FINAL_RETURNS_CSV, TRUNCATION_REPORT_JSON
+from src.utils.artifact_io import write_csv
 from src.utils.json_utils import write_json
 from src.utils.time_utils import iso_or_none
 from src.utils.validation import require_non_negative_k
@@ -47,8 +49,7 @@ def standardize_length(
     final = data.iloc[:truncated_rows].copy()
     dropped_tail = data.iloc[truncated_rows:].copy()
 
-    paths.output_csv.parent.mkdir(parents=True, exist_ok=True)
-    final.to_csv(paths.output_csv, index=False)
+    write_csv(final, paths.output_csv, index=False)
 
     returns = final[LOG_RETURN]
     report = {

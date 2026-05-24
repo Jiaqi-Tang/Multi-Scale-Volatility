@@ -22,6 +22,7 @@ from src.globals.paths import (
     SHUFFLE_RETURNS_CSV,
 )
 from src.globals.series import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_SHUFFLE
+from src.utils.artifact_io import write_csv
 from src.utils.json_utils import write_json
 from src.utils.validation import require_finite_array, require_positive_k
 
@@ -147,8 +148,7 @@ def decompose_csv(item: DecompositionInput, k: int) -> dict[str, Any]:
         output[f"D_{scale:02d}"] = detail
     output[f"A_{k:02d}"] = final_approximation
 
-    item.output_csv.parent.mkdir(parents=True, exist_ok=True)
-    output.to_csv(item.output_csv, index=False)
+    write_csv(output, item.output_csv, index=False)
 
     return {
         "input_csv": str(item.input_csv),

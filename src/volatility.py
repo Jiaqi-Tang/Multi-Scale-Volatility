@@ -32,6 +32,7 @@ from src.globals.paths import (
     VOLATILITY_RESULTS_DIR,
 )
 from src.globals.series import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_SHUFFLE
+from src.utils.artifact_io import write_csv
 from src.utils.json_utils import write_json
 from src.utils.validation import require_finite_array, require_positive_k
 
@@ -94,7 +95,7 @@ def compute_volatility_metrics(
         series_report[item.name] = item_report
 
     output = pd.DataFrame(rows)
-    output.to_csv(paths.output_csv, index=False)
+    write_csv(output, paths.output_csv, index=False)
 
     report = {
         "K": k,

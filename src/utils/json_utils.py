@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-import json
 import math
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
+
+from src.utils.artifact_io import write_json
 
 
 def json_scalar(value: Any) -> Any:
@@ -27,10 +28,7 @@ def json_scalar(value: Any) -> Any:
     return value
 
 
-def write_json(path: Path, data: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
-
-
 def read_json(path: Path) -> Any:
+    import json
+
     return json.loads(path.read_text(encoding="utf-8"))

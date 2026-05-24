@@ -44,30 +44,33 @@ Ensure that Python 3.13 is installed
 Install dependencies:
 
 ```powershell
-pip install -r requirements.txt
+pip install -e .
 ```
 
 Run the full pipeline:
 
 ```powershell
-python scripts/run_all.py
+ve run-all
 ```
 
 Or run each step explicitly:
 
 ```powershell
-python scripts/run_preprocessing.py
-python scripts/run_length_standardization.py
-python scripts/run_baselines.py
-python scripts/run_decomposition.py
-python scripts/run_volatility.py
-python scripts/run_entropy.py
-python scripts/run_eda_plots.py
-python scripts/run_decomposition_plots.py
-python scripts/run_volatility_plots.py
-python scripts/run_entropy_plots.py
-python scripts/run_memo_plots.py
+ve preprocess
+ve standardize
+ve baselines
+ve decompose
+ve volatility
+ve entropy
+ve plot eda
+ve plot decomposition
+ve plot volatility
+ve plot entropy
+ve plot memo
 ```
+
+The legacy `scripts/run_*.py` entry points are still available after installing
+the project in editable mode.
 
 ## Repository Structure
 
