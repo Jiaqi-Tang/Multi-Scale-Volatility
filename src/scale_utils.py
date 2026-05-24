@@ -6,8 +6,8 @@ import re
 
 import numpy as np
 
-from src.globals.constants import BASE_INTERVAL_MINUTES
-from src.globals.types import ComponentType
+from src.config.constants import BASE_INTERVAL_MINUTES
+from src.config.types import ComponentType
 
 
 def component_type(component: str) -> ComponentType:

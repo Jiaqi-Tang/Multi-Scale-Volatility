@@ -20,9 +20,25 @@ from src.scale_utils import (
     compress_component,
     decomposition_components,
 )
-from src.globals.columns import COMPONENT, COMPONENT_TYPE, SERIES
-from src.globals.constants import BASE_INTERVAL_MINUTES, DEFAULT_K
-from src.globals.paths import (
+from src.config.bundles import SeriesBundle
+from src.config.columns import COMPONENT, COMPONENT_TYPE, SERIES
+from src.config.constants import BASE_INTERVAL_MINUTES, DEFAULT_K
+from src.config.metric_columns import (
+    EFFECTIVE_N,
+    ENTROPY_GAP_GAUSSIAN,
+    ENTROPY_GAP_SHUFFLE,
+    FINAL_NORMALIZED_ENTROPY,
+    GAUSSIAN_NORMALIZED_ENTROPY,
+    K,
+    NORMALIZED_ENTROPY,
+    ORDINAL_WINDOWS,
+    PERMUTATION_ENTROPY,
+    REPEAT_LENGTH,
+    SCALE_DAYS,
+    SCALE_MINUTES,
+    SHUFFLE_NORMALIZED_ENTROPY,
+)
+from src.config.paths import (
     ENTROPY_GAPS_CSV,
     ENTROPY_REPORT_JSON,
     ENTROPY_RESULTS_DIR,
@@ -31,12 +47,13 @@ from src.globals.paths import (
     LAYER_ENTROPY_CSV,
     SHUFFLE_DECOMPOSITION_CSV,
 )
-from src.globals.series import (
+from src.config.series import (
     SERIES_FINAL,
     SERIES_GAUSSIAN,
     SERIES_ORDER,
     SERIES_SHUFFLE,
 )
+from src.config.schemas import ENTROPY_GAP_INDEX_COLUMNS
 from src.utils.artifact_io import write_csv
 from src.utils.json_utils import write_json
 from src.utils.validation import require_finite_array, require_positive_k
@@ -78,11 +95,17 @@ class EntropyPaths:
             self.output_dir / ENTROPY_REPORT_JSON.name
         )
 
+    def input_bundle(self) -> SeriesBundle[Path]:
+        return SeriesBundle(
+            final=self.final_decomposition_csv,
+            shuffle=self.shuffle_decomposition_csv,
+            gaussian=self.gaussian_decomposition_csv,
+        )
+
     def inputs(self) -> list[EntropyInput]:
         return [
-            EntropyInput(SERIES_FINAL, self.final_decomposition_csv),
-            EntropyInput(SERIES_SHUFFLE, self.shuffle_decomposition_csv),
-            EntropyInput(SERIES_GAUSSIAN, self.gaussian_decomposition_csv),
+            EntropyInput(name, decomposition_csv)
+            for name, decomposition_csv in self.input_bundle()
         ]
 
 
@@ -188,23 +211,23 @@ def _compute_series_entropy(
             {
                 SERIES: item.name,
                 COMPONENT: component,
-                "k": scale,
+                K: scale,
                 COMPONENT_TYPE: kind,
-                "scale_minutes": scale_minutes,
-                "scale_days": scale_minutes / (60 * 24),
-                "repeat_length": repeat_length,
-                "effective_n": len(compressed),
-                "ordinal_windows": entropy_result["ordinal_windows"],
-                "permutation_entropy": entropy_result["permutation_entropy"],
-                "normalized_entropy": entropy_result["normalized_entropy"],
+                SCALE_MINUTES: scale_minutes,
+                SCALE_DAYS: scale_minutes / (60 * 24),
+                REPEAT_LENGTH: repeat_length,
+                EFFECTIVE_N: len(compressed),
+                ORDINAL_WINDOWS: entropy_result[ORDINAL_WINDOWS],
+                PERMUTATION_ENTROPY: entropy_result[PERMUTATION_ENTROPY],
+                NORMALIZED_ENTROPY: entropy_result[NORMALIZED_ENTROPY],
             }
         )
         pattern_counts[component] = entropy_result["pattern_counts"]
         component_report[component] = {
-            "repeat_length": repeat_length,
+            REPEAT_LENGTH: repeat_length,
             "expanded_n": int(len(values)),
-            "effective_n": int(len(compressed)),
-            "ordinal_windows": entropy_result["ordinal_windows"],
+            EFFECTIVE_N: int(len(compressed)),
+            ORDINAL_WINDOWS: entropy_result[ORDINAL_WINDOWS],
             "component_jitter_seed": component_seed,
             "compressed_unique_values": int(pd.Series(compressed).nunique()),
         }
@@ -241,26 +264,19 @@ def _permutation_entropy(
     entropy = float(-np.sum(probabilities * np.log(probabilities)))
     normalized_entropy = float(entropy / math.log(math.factorial(embedding_dimension)))
     return {
-        "ordinal_windows": int(ordinal_windows),
+        ORDINAL_WINDOWS: int(ordinal_windows),
         "pattern_counts": counts,
-        "permutation_entropy": entropy,
-        "normalized_entropy": normalized_entropy,
+        PERMUTATION_ENTROPY: entropy,
+        NORMALIZED_ENTROPY: normalized_entropy,
     }
 
 
 def _compute_entropy_gaps(layer_entropy: pd.DataFrame) -> pd.DataFrame:
-    index_columns = [
-        COMPONENT,
-        "k",
-        COMPONENT_TYPE,
-        "scale_minutes",
-        "scale_days",
-        "repeat_length",
-    ]
+    index_columns = list(ENTROPY_GAP_INDEX_COLUMNS)
     wide = layer_entropy.pivot_table(
         index=index_columns,
-        columns="series",
-        values="normalized_entropy",
+        columns=SERIES,
+        values=NORMALIZED_ENTROPY,
         aggfunc="first",
     ).reset_index()
     required_series = list(SERIES_ORDER)
@@ -270,27 +286,27 @@ def _compute_entropy_gaps(layer_entropy: pd.DataFrame) -> pd.DataFrame:
 
     wide = wide.rename(
         columns={
-            SERIES_FINAL: "final_normalized_entropy",
-            SERIES_SHUFFLE: "shuffle_normalized_entropy",
-            SERIES_GAUSSIAN: "gaussian_normalized_entropy",
+            SERIES_FINAL: FINAL_NORMALIZED_ENTROPY,
+            SERIES_SHUFFLE: SHUFFLE_NORMALIZED_ENTROPY,
+            SERIES_GAUSSIAN: GAUSSIAN_NORMALIZED_ENTROPY,
         }
     )
-    wide["entropy_gap_shuffle"] = (
-        wide["shuffle_normalized_entropy"] - wide["final_normalized_entropy"]
+    wide[ENTROPY_GAP_SHUFFLE] = (
+        wide[SHUFFLE_NORMALIZED_ENTROPY] - wide[FINAL_NORMALIZED_ENTROPY]
     )
-    wide["entropy_gap_gaussian"] = (
-        wide["gaussian_normalized_entropy"] - wide["final_normalized_entropy"]
+    wide[ENTROPY_GAP_GAUSSIAN] = (
+        wide[GAUSSIAN_NORMALIZED_ENTROPY] - wide[FINAL_NORMALIZED_ENTROPY]
     )
     return wide[
         [
             *index_columns,
-            "final_normalized_entropy",
-            "shuffle_normalized_entropy",
-            "gaussian_normalized_entropy",
-            "entropy_gap_shuffle",
-            "entropy_gap_gaussian",
+            FINAL_NORMALIZED_ENTROPY,
+            SHUFFLE_NORMALIZED_ENTROPY,
+            GAUSSIAN_NORMALIZED_ENTROPY,
+            ENTROPY_GAP_SHUFFLE,
+            ENTROPY_GAP_GAUSSIAN,
         ]
-    ].sort_values("k")
+    ].sort_values(K)
 
 
 def _add_jitter(

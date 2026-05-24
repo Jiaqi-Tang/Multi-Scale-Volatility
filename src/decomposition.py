@@ -9,9 +9,10 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from src.globals.columns import INDEX, LOG_RETURN, ORIGINAL, TIMESTAMP_UTC
-from src.globals.constants import BASE_INTERVAL_MINUTES, DEFAULT_K
-from src.globals.paths import (
+from src.config.bundles import SeriesBundle
+from src.config.columns import INDEX, LOG_RETURN, ORIGINAL, TIMESTAMP_UTC
+from src.config.constants import BASE_INTERVAL_MINUTES, DEFAULT_K
+from src.config.paths import (
     DECOMPOSITION_DIR,
     DECOMPOSITION_REPORT_JSON,
     FINAL_DECOMPOSITION_CSV,
@@ -21,7 +22,7 @@ from src.globals.paths import (
     SHUFFLE_DECOMPOSITION_CSV,
     SHUFFLE_RETURNS_CSV,
 )
-from src.globals.series import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_SHUFFLE
+from src.config.schemas import RETURN_COLUMNS
 from src.utils.artifact_io import write_csv
 from src.utils.json_utils import write_json
 from src.utils.validation import require_finite_array, require_positive_k
@@ -49,35 +50,31 @@ class DecompositionPaths:
             self.output_dir / DECOMPOSITION_REPORT_JSON.name
         )
 
+    def input_bundle(self) -> SeriesBundle[Path]:
+        return SeriesBundle(
+            final=self.final_csv,
+            shuffle=self.shuffle_csv,
+            gaussian=self.gaussian_csv,
+        )
+
+    def output_bundle(self) -> SeriesBundle[Path]:
+        if self.output_dir == DECOMPOSITION_DIR:
+            return SeriesBundle(
+                final=FINAL_DECOMPOSITION_CSV,
+                shuffle=SHUFFLE_DECOMPOSITION_CSV,
+                gaussian=GAUSSIAN_DECOMPOSITION_CSV,
+            )
+        return SeriesBundle(
+            final=self.output_dir / FINAL_DECOMPOSITION_CSV.name,
+            shuffle=self.output_dir / SHUFFLE_DECOMPOSITION_CSV.name,
+            gaussian=self.output_dir / GAUSSIAN_DECOMPOSITION_CSV.name,
+        )
+
     def inputs(self) -> list[DecompositionInput]:
+        outputs = self.output_bundle()
         return [
-            DecompositionInput(
-                name=SERIES_FINAL,
-                input_csv=self.final_csv,
-                output_csv=(
-                    FINAL_DECOMPOSITION_CSV
-                    if self.output_dir == DECOMPOSITION_DIR
-                    else self.output_dir / FINAL_DECOMPOSITION_CSV.name
-                ),
-            ),
-            DecompositionInput(
-                name=SERIES_SHUFFLE,
-                input_csv=self.shuffle_csv,
-                output_csv=(
-                    SHUFFLE_DECOMPOSITION_CSV
-                    if self.output_dir == DECOMPOSITION_DIR
-                    else self.output_dir / SHUFFLE_DECOMPOSITION_CSV.name
-                ),
-            ),
-            DecompositionInput(
-                name=SERIES_GAUSSIAN,
-                input_csv=self.gaussian_csv,
-                output_csv=(
-                    GAUSSIAN_DECOMPOSITION_CSV
-                    if self.output_dir == DECOMPOSITION_DIR
-                    else self.output_dir / GAUSSIAN_DECOMPOSITION_CSV.name
-                ),
-            ),
+            DecompositionInput(name=name, input_csv=input_csv, output_csv=outputs[name])
+            for name, input_csv in self.input_bundle()
         ]
 
 
@@ -107,7 +104,7 @@ def run_decomposition(
 
 
 def decompose_csv(item: DecompositionInput, k: int) -> dict[str, Any]:
-    frame = pd.read_csv(item.input_csv, usecols=[TIMESTAMP_UTC, LOG_RETURN])
+    frame = pd.read_csv(item.input_csv, usecols=list(RETURN_COLUMNS))
     if frame.empty:
         raise ValueError(f"Input dataset is empty: {item.input_csv}")
     if frame[LOG_RETURN].isna().any():
@@ -139,7 +136,7 @@ def decompose_csv(item: DecompositionInput, k: int) -> dict[str, Any]:
 
     output = pd.DataFrame(
         {
-            "index": np.arange(n, dtype=np.int64),
+            INDEX: np.arange(n, dtype=np.int64),
             TIMESTAMP_UTC: frame[TIMESTAMP_UTC],
             ORIGINAL: values,
         }

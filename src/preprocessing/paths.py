@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from src.globals.paths import (
+from src.config.paths import (
     CLEAN_1M_CSV,
     CLEAN_RETURNS_CSV,
     INTERMEDIATE_DIR,

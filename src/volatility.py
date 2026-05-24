@@ -15,15 +15,16 @@ from src.scale_utils import (
     component_type,
     decomposition_components,
 )
-from src.globals.columns import COMPONENT_TYPE, ORIGINAL, SERIES
-from src.globals.constants import (
+from src.config.bundles import SeriesBundle
+from src.config.columns import COMPONENT, COMPONENT_TYPE, ORIGINAL, SERIES
+from src.config.constants import (
     BASE_INTERVAL_MINUTES,
     DEFAULT_K,
     PERIODS_PER_HOUR,
     TRADING_DAYS_PER_YEAR,
     TRADING_HOURS_PER_DAY,
 )
-from src.globals.paths import (
+from src.config.paths import (
     FINAL_DECOMPOSITION_CSV,
     GAUSSIAN_DECOMPOSITION_CSV,
     SHUFFLE_DECOMPOSITION_CSV,
@@ -31,7 +32,23 @@ from src.globals.paths import (
     VOLATILITY_REPORT_JSON,
     VOLATILITY_RESULTS_DIR,
 )
-from src.globals.series import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_SHUFFLE
+from src.config.metric_columns import (
+    ANNUALIZED_RMS_VOLATILITY,
+    APPROXIMATION_ENERGY,
+    DETAIL_ENERGY_SHARE,
+    DETAIL_ENERGY_SHARE_SUM,
+    DETAIL_ENERGY_SUM,
+    ENERGY,
+    ENERGY_RECONSTRUCTION_GAP,
+    K,
+    ORIGINAL_ENERGY,
+    RMS_VOLATILITY,
+    SCALE_DAYS,
+    SCALE_MINUTES,
+    TOTAL_COMPONENT_ENERGY,
+    TOTAL_COMPONENT_ENERGY_SHARE,
+    TOTAL_COMPONENT_ENERGY_SHARE_SUM,
+)
 from src.utils.artifact_io import write_csv
 from src.utils.json_utils import write_json
 from src.utils.validation import require_finite_array, require_positive_k
@@ -62,11 +79,17 @@ class VolatilityPaths:
             self.output_dir / VOLATILITY_REPORT_JSON.name
         )
 
+    def input_bundle(self) -> SeriesBundle[Path]:
+        return SeriesBundle(
+            final=self.final_decomposition_csv,
+            shuffle=self.shuffle_decomposition_csv,
+            gaussian=self.gaussian_decomposition_csv,
+        )
+
     def inputs(self) -> list[VolatilityInput]:
         return [
-            VolatilityInput(SERIES_FINAL, self.final_decomposition_csv),
-            VolatilityInput(SERIES_SHUFFLE, self.shuffle_decomposition_csv),
-            VolatilityInput(SERIES_GAUSSIAN, self.gaussian_decomposition_csv),
+            VolatilityInput(name, decomposition_csv)
+            for name, decomposition_csv in self.input_bundle()
         ]
 
 
@@ -146,16 +169,16 @@ def _compute_series_metrics(
         scale_minutes = component_scale_minutes(component, BASE_INTERVAL_MINUTES)
         metrics = {
             SERIES: item.name,
-            "component": component,
-            "k": scale,
+            COMPONENT: component,
+            K: scale,
             COMPONENT_TYPE: kind,
-            "scale_minutes": scale_minutes,
-            "scale_days": scale_minutes / (60 * 24),
-            "energy": energy,
-            "rms_volatility": rms,
-            "annualized_rms_volatility": rms * annualization_factor,
-            "detail_energy_share": np.nan,
-            "total_component_energy_share": np.nan,
+            SCALE_MINUTES: scale_minutes,
+            SCALE_DAYS: scale_minutes / (60 * 24),
+            ENERGY: energy,
+            RMS_VOLATILITY: rms,
+            ANNUALIZED_RMS_VOLATILITY: rms * annualization_factor,
+            DETAIL_ENERGY_SHARE: np.nan,
+            TOTAL_COMPONENT_ENERGY_SHARE: np.nan,
         }
         component_metrics.append(metrics)
         component_energies[component] = energy
@@ -171,12 +194,12 @@ def _compute_series_metrics(
         raise ValueError(f"Total component energy is non-positive for {item.name}")
 
     for metrics in component_metrics:
-        component = metrics["component"]
+        component = metrics[COMPONENT]
         if metrics[COMPONENT_TYPE] == "detail":
-            metrics["detail_energy_share"] = (
+            metrics[DETAIL_ENERGY_SHARE] = (
                 component_energies[component] / detail_energy_sum
             )
-        metrics["total_component_energy_share"] = (
+        metrics[TOTAL_COMPONENT_ENERGY_SHARE] = (
             component_energies[component] / total_component_energy
         )
 
@@ -185,20 +208,20 @@ def _compute_series_metrics(
     report = {
         "input_csv": str(item.decomposition_csv),
         "N": int(n),
-        "original_energy": original_energy,
-        "detail_energy_sum": detail_energy_sum,
-        "approximation_energy": component_energies[approximation_component],
-        "total_component_energy": total_component_energy,
-        "energy_reconstruction_gap": original_energy - total_component_energy,
-        "detail_energy_share_sum": float(
+        ORIGINAL_ENERGY: original_energy,
+        DETAIL_ENERGY_SUM: detail_energy_sum,
+        APPROXIMATION_ENERGY: component_energies[approximation_component],
+        TOTAL_COMPONENT_ENERGY: total_component_energy,
+        ENERGY_RECONSTRUCTION_GAP: original_energy - total_component_energy,
+        DETAIL_ENERGY_SHARE_SUM: float(
             sum(
-                row["detail_energy_share"]
+                row[DETAIL_ENERGY_SHARE]
                 for row in component_metrics
                 if row[COMPONENT_TYPE] == "detail"
             )
         ),
-        "total_component_energy_share_sum": float(
-            sum(row["total_component_energy_share"] for row in component_metrics)
+        TOTAL_COMPONENT_ENERGY_SHARE_SUM: float(
+            sum(row[TOTAL_COMPONENT_ENERGY_SHARE] for row in component_metrics)
         ),
         "component_means": component_means,
     }

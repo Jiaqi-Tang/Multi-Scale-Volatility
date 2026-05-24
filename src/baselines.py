@@ -9,9 +9,9 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from src.globals.columns import LOG_RETURN, TIMESTAMP_UTC
-from src.globals.constants import GAUSSIAN_SEED, SHUFFLE_SEED
-from src.globals.paths import (
+from src.config.columns import LOG_RETURN, TIMESTAMP_UTC
+from src.config.constants import GAUSSIAN_SEED, SHUFFLE_SEED
+from src.config.paths import (
     BASELINES_DIR,
     BASELINES_REPORT_JSON,
     FINAL_RETURNS_CSV,

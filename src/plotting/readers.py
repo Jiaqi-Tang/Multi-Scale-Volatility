@@ -8,8 +8,14 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from src.globals.columns import COMPONENT, COMPONENT_TYPE, INDEX, LOG_RETURN, ORIGINAL, SERIES
-from src.globals.series import SERIES_ORDER
+from src.config.columns import COMPONENT, LOG_RETURN
+from src.config.schemas import (
+    decomposition_columns,
+    ENTROPY_GAP_COLUMNS,
+    LAYER_ENTROPY_COLUMNS,
+    VOLATILITY_COLUMNS,
+)
+from src.config.series import SERIES_ORDER
 from src.scale_utils import decomposition_components
 from src.utils.json_utils import read_json
 from src.utils.validation import require_columns
@@ -23,7 +29,12 @@ def read_returns(path: Path) -> np.ndarray:
 
 
 def read_decomposition(path: Path, k: int) -> pd.DataFrame:
-    columns = [INDEX, ORIGINAL] + decomposition_components(k, include_original=False)
+    columns = list(
+        decomposition_columns(
+            decomposition_components(k, include_original=False),
+            include_timestamp=False,
+        )
+    )
     frame = pd.read_csv(path, usecols=columns)
     require_columns(frame, columns, path)
     return frame
@@ -31,41 +42,21 @@ def read_decomposition(path: Path, k: int) -> pd.DataFrame:
 
 def read_volatility(path: Path, k: int) -> pd.DataFrame:
     frame = pd.read_csv(path)
-    required_columns = {
-        SERIES,
-        COMPONENT,
-        COMPONENT_TYPE,
-        "detail_energy_share",
-        "total_component_energy_share",
-        "rms_volatility",
-        "annualized_rms_volatility",
-    }
-    require_columns(frame, required_columns, path)
+    require_columns(frame, VOLATILITY_COLUMNS, path)
     validate_components(frame, path, k)
     return frame
 
 
 def read_layer_entropy(path: Path, k: int) -> pd.DataFrame:
     frame = pd.read_csv(path)
-    required_columns = {
-        SERIES,
-        COMPONENT,
-        "permutation_entropy",
-        "normalized_entropy",
-    }
-    require_columns(frame, required_columns, path)
+    require_columns(frame, LAYER_ENTROPY_COLUMNS, path)
     validate_components(frame, path, k)
     return frame
 
 
 def read_entropy_gaps(path: Path, k: int) -> pd.DataFrame:
     frame = pd.read_csv(path)
-    required_columns = {
-        COMPONENT,
-        "entropy_gap_shuffle",
-        "entropy_gap_gaussian",
-    }
-    require_columns(frame, required_columns, path)
+    require_columns(frame, ENTROPY_GAP_COLUMNS, path)
     validate_components(frame, path, k)
     return frame
 

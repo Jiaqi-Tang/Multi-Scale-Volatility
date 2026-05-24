@@ -8,6 +8,9 @@ version = "0.1.0"
 description = "Multi-scale volatility and entropy analysis for EUR/USD returns."
 readme = "README.md"
 requires-python = ">=3.13"
+classifiers = [
+  "Programming Language :: Python :: 3.13",
+]
 dependencies = [
   "numpy==2.4.4",
   "pandas==3.0.2",
@@ -20,7 +23,7 @@ ve = "src.cli:main"
 [tool.setuptools]
 packages = [
   "src",
-  "src.globals",
+  "src.config",
   "src.preprocessing",
   "src.plotting",
   "src.plotting.primitives",

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 
-from src.globals.paths import (
+from src.config.paths import (
     EDA_PLOTS_DIR,
     FINAL_RETURNS_CSV,
     GAUSSIAN_RETURNS_CSV,

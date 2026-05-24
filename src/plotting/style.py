@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import matplotlib
 
-from src.globals.series import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_SHUFFLE
+from src.config.series import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_SHUFFLE
 
 matplotlib.use("Agg")
 

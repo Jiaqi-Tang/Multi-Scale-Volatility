@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -17,8 +18,8 @@ from src.entropy import (
     EntropyPaths,
     compute_entropy_metrics,
 )
-from src.globals.constants import DEFAULT_K, GAUSSIAN_SEED, SHUFFLE_SEED
-from src.globals.paths import (
+from src.config.constants import DEFAULT_K, GAUSSIAN_SEED, SHUFFLE_SEED
+from src.config.paths import (
     BASELINES_DIR,
     CLEAN_RETURNS_CSV,
     DECOMPOSITION_DIR,
@@ -57,6 +58,8 @@ from src.volatility import VolatilityPaths, compute_volatility_metrics
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    logging.getLogger("matplotlib").setLevel(logging.WARNING)
     handler = getattr(args, "handler", None)
     if handler is None:
         parser.print_help()
@@ -420,4 +423,3 @@ def _json_ready_summary(results: dict[str, Any]) -> dict[str, Any]:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

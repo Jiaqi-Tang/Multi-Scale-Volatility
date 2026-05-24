@@ -10,8 +10,10 @@ import numpy as np
 import pandas as pd
 import math
 
-from src.globals.constants import DEFAULT_K
-from src.globals.paths import (
+from src.config.constants import DEFAULT_K
+from src.config.columns import COMPONENT, COMPONENT_TYPE, INDEX, SERIES
+from src.config.metric_columns import DETAIL_ENERGY_SHARE, NORMALIZED_ENTROPY
+from src.config.paths import (
     FINAL_DECOMPOSITION_CSV,
     FINAL_RETURNS_CSV,
     GAUSSIAN_RETURNS_CSV,
@@ -21,7 +23,7 @@ from src.globals.paths import (
     SHUFFLE_DECOMPOSITION_CSV,
     VOLATILITY_CSV,
 )
-from src.globals.series import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_SHUFFLE
+from src.config.series import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_SHUFFLE
 from src.plotting.primitives.distributions import add_mean_median_lines
 from src.plotting.readers import read_decomposition, read_returns
 from src.plotting.style import (
@@ -124,7 +126,7 @@ def plot_memo_decomposition_example(
         ("D_11", "Detail D_11"),
         ("A_11", "Approximation A_11"),
     ]
-    x = frame["index"].to_numpy()
+    x = frame[INDEX].to_numpy()
 
     fig, axes = plt.subplots(
         len(layers),
@@ -283,7 +285,7 @@ def plot_memo_energy_profile(
     volatility: pd.DataFrame,
     output_path: Path,
 ) -> Path:
-    detail = volatility[volatility["component_type"] == "detail"].copy()
+    detail = volatility[volatility[COMPONENT_TYPE] == "detail"].copy()
     components = [f"D_{index:02d}" for index in range(1, 12)]
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 5.6), sharex=False)
@@ -295,13 +297,13 @@ def plot_memo_energy_profile(
         (SERIES_GAUSSIAN, GAUSSIAN_COLOR, "Gaussian baseline"),
     ]:
         series_frame = (
-            detail[detail["series"] == series]
-            .set_index("component")
+            detail[detail[SERIES] == series]
+            .set_index(COMPONENT)
             .reindex(components)
         )
         share_axis.plot(
             components,
-            series_frame["detail_energy_share"].astype(float).to_numpy(),
+            series_frame[DETAIL_ENERGY_SHARE].astype(float).to_numpy(),
             marker="o",
             linewidth=1.8,
             markersize=4.5,
@@ -310,9 +312,9 @@ def plot_memo_energy_profile(
         )
 
     wide = detail.pivot(
-        index="component",
-        columns="series",
-        values="detail_energy_share",
+        index=COMPONENT,
+        columns=SERIES,
+        values=DETAIL_ENERGY_SHARE,
     ).reindex(components)
     difference_axis.plot(
         components,
@@ -450,13 +452,13 @@ def plot_memo_entropy_profile(
         (SERIES_GAUSSIAN, GAUSSIAN_COLOR, "Gaussian baseline"),
     ]:
         series_frame = (
-            entropy[entropy["series"] == series]
-            .set_index("component")
+            entropy[entropy[SERIES] == series]
+            .set_index(COMPONENT)
             .reindex(components)
         )
         axis.plot(
             components,
-            series_frame["normalized_entropy"].astype(float).to_numpy(),
+            series_frame[NORMALIZED_ENTROPY].astype(float).to_numpy(),
             marker="o",
             linewidth=1.8,
             markersize=4.5,

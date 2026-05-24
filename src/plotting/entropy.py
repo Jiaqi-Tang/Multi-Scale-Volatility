@@ -5,14 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from src.globals.constants import DEFAULT_K
-from src.globals.paths import (
+from src.config.constants import DEFAULT_K
+from src.config.metric_columns import NORMALIZED_ENTROPY, PERMUTATION_ENTROPY
+from src.config.paths import (
     ENTROPY_GAPS_CSV,
     ENTROPY_PLOTS_DIR,
     ENTROPY_REPORT_JSON,
     LAYER_ENTROPY_CSV,
 )
-from src.globals.series import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_ORDER, SERIES_SHUFFLE
+from src.config.series import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_ORDER, SERIES_SHUFFLE
 from src.plotting.primitives import (
     plot_entropy_gaps,
     plot_entropy_metric,
@@ -50,7 +51,7 @@ def create_entropy_plots(
         plot_entropy_metric(
             layer_entropy,
             paths.output_dir / "permutation_entropy.png",
-            metric="permutation_entropy",
+            metric=PERMUTATION_ENTROPY,
             title="Permutation Entropy by Decomposition Component",
             ylabel="Permutation entropy",
             k=k,
@@ -58,7 +59,7 @@ def create_entropy_plots(
         plot_entropy_metric(
             layer_entropy,
             paths.output_dir / "normalized_entropy.png",
-            metric="normalized_entropy",
+            metric=NORMALIZED_ENTROPY,
             title="Normalized Permutation Entropy by Decomposition Component",
             ylabel="Normalized entropy",
             k=k,

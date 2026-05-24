@@ -5,9 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from src.globals.columns import COMPONENT_TYPE
-from src.globals.constants import DEFAULT_K
-from src.globals.paths import VOLATILITY_CSV, VOLATILITY_PLOTS_DIR
+from src.config.columns import COMPONENT_TYPE
+from src.config.constants import DEFAULT_K
+from src.config.metric_columns import (
+    ANNUALIZED_RMS_VOLATILITY,
+    DETAIL_ENERGY_SHARE,
+    RMS_VOLATILITY,
+    TOTAL_COMPONENT_ENERGY_SHARE,
+)
+from src.config.paths import VOLATILITY_CSV, VOLATILITY_PLOTS_DIR
 from src.plotting.primitives import (
     plot_volatility_difference_metric,
     plot_volatility_metric,
@@ -36,7 +42,7 @@ def create_volatility_plots(
         plot_volatility_metric(
             frame[frame[COMPONENT_TYPE] == "detail"],
             paths.output_dir / "detail_energy_share.png",
-            metric="detail_energy_share",
+            metric=DETAIL_ENERGY_SHARE,
             title="Detail Energy Share by Decomposition Component",
             ylabel="Detail energy share",
             k=k,
@@ -45,7 +51,7 @@ def create_volatility_plots(
         plot_volatility_metric(
             frame,
             paths.output_dir / "total_component_energy_share.png",
-            metric="total_component_energy_share",
+            metric=TOTAL_COMPONENT_ENERGY_SHARE,
             title="Total Component Energy Share by Decomposition Component",
             ylabel="Total component energy share",
             k=k,
@@ -54,7 +60,7 @@ def create_volatility_plots(
         plot_volatility_metric(
             frame,
             paths.output_dir / "rms_volatility.png",
-            metric="rms_volatility",
+            metric=RMS_VOLATILITY,
             title="RMS Volatility by Decomposition Component",
             ylabel="RMS volatility",
             k=k,
@@ -63,7 +69,7 @@ def create_volatility_plots(
         plot_volatility_metric(
             frame,
             paths.output_dir / "annualized_rms_volatility.png",
-            metric="annualized_rms_volatility",
+            metric=ANNUALIZED_RMS_VOLATILITY,
             title="Annualized RMS Volatility by Decomposition Component",
             ylabel="Annualized RMS volatility",
             k=k,
@@ -72,7 +78,7 @@ def create_volatility_plots(
         plot_volatility_difference_metric(
             frame[frame[COMPONENT_TYPE] == "detail"],
             paths.output_dir / "detail_energy_share_difference.png",
-            metric="detail_energy_share",
+            metric=DETAIL_ENERGY_SHARE,
             title="Detail Energy Share Difference from Baselines",
             ylabel="Final minus baseline",
             k=k,
@@ -81,7 +87,7 @@ def create_volatility_plots(
         plot_volatility_difference_metric(
             frame,
             paths.output_dir / "total_component_energy_share_difference.png",
-            metric="total_component_energy_share",
+            metric=TOTAL_COMPONENT_ENERGY_SHARE,
             title="Total Component Energy Share Difference from Baselines",
             ylabel="Final minus baseline",
             k=k,
@@ -90,7 +96,7 @@ def create_volatility_plots(
         plot_volatility_difference_metric(
             frame,
             paths.output_dir / "rms_volatility_difference.png",
-            metric="rms_volatility",
+            metric=RMS_VOLATILITY,
             title="RMS Volatility Difference from Baselines",
             ylabel="Final minus baseline",
             k=k,

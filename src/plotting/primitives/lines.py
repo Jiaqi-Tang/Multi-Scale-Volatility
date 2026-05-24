@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from src.globals.columns import INDEX
+from src.config.columns import INDEX
 from src.plotting.style import FIGURE_DPI, GRID_FIGURE_DPI
 from src.scale_utils import decomposition_components
 

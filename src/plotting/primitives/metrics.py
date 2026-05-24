@@ -7,8 +7,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from src.globals.columns import COMPONENT, SERIES
-from src.globals.series import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_ORDER, SERIES_SHUFFLE
+from src.config.columns import COMPONENT, SERIES
+from src.config.metric_columns import ENTROPY_GAP_GAUSSIAN, ENTROPY_GAP_SHUFFLE
+from src.config.series import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_ORDER, SERIES_SHUFFLE
 from src.plotting.style import (
     FIGURE_DPI,
     GAUSSIAN_COLOR,
@@ -139,7 +140,7 @@ def plot_entropy_metric(
 def plot_entropy_gaps(frame: pd.DataFrame, output_path: Path, k: int) -> Path:
     components = decomposition_components(k, include_original=False)
     ordered = frame.set_index(COMPONENT).reindex(components)
-    gap_columns = ["entropy_gap_shuffle", "entropy_gap_gaussian"]
+    gap_columns = [ENTROPY_GAP_SHUFFLE, ENTROPY_GAP_GAUSSIAN]
     if ordered[gap_columns].isna().any().any():
         missing = ordered[ordered[gap_columns].isna().any(axis=1)].index.tolist()
         raise ValueError(f"Missing entropy gap values for components: {missing}")
@@ -147,7 +148,7 @@ def plot_entropy_gaps(frame: pd.DataFrame, output_path: Path, k: int) -> Path:
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(
         components,
-        ordered["entropy_gap_shuffle"].astype(float).to_numpy(),
+        ordered[ENTROPY_GAP_SHUFFLE].astype(float).to_numpy(),
         marker="o",
         linewidth=1.7,
         markersize=4.5,
@@ -156,7 +157,7 @@ def plot_entropy_gaps(frame: pd.DataFrame, output_path: Path, k: int) -> Path:
     )
     ax.plot(
         components,
-        ordered["entropy_gap_gaussian"].astype(float).to_numpy(),
+        ordered[ENTROPY_GAP_GAUSSIAN].astype(float).to_numpy(),
         marker="o",
         linewidth=1.7,
         markersize=4.5,
@@ -219,4 +220,3 @@ def metric_components(k: int, include_approximation: bool) -> list[str]:
     if include_approximation:
         components.append(f"A_{k:02d}")
     return components
-

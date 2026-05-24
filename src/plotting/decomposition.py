@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from src.globals.constants import DEFAULT_K
-from src.globals.paths import (
+from src.config.constants import DEFAULT_K
+from src.config.paths import (
     DECOMPOSITION_PLOTS_DIR,
     FINAL_DECOMPOSITION_CSV,
     GAUSSIAN_DECOMPOSITION_CSV,

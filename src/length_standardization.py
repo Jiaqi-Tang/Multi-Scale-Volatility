@@ -8,9 +8,9 @@ from typing import Any
 
 import pandas as pd
 
-from src.globals.columns import LOG_RETURN, PREVIOUS_TIMESTAMP_UTC, TIMESTAMP_UTC
-from src.globals.constants import BASE_INTERVAL_MINUTES, DEFAULT_K
-from src.globals.paths import CLEAN_RETURNS_CSV, FINAL_RETURNS_CSV, TRUNCATION_REPORT_JSON
+from src.config.columns import LOG_RETURN, PREVIOUS_TIMESTAMP_UTC, TIMESTAMP_UTC
+from src.config.constants import BASE_INTERVAL_MINUTES, DEFAULT_K
+from src.config.paths import CLEAN_RETURNS_CSV, FINAL_RETURNS_CSV, TRUNCATION_REPORT_JSON
 from src.utils.artifact_io import write_csv
 from src.utils.json_utils import write_json
 from src.utils.time_utils import iso_or_none

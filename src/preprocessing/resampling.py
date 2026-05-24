@@ -6,7 +6,7 @@ from typing import Any
 
 import pandas as pd
 
-from src.globals.columns import TIMESTAMP_UTC
+from src.config.columns import TIMESTAMP_UTC
 from src.preprocessing.summary import int_key_counts
 from src.utils.time_utils import iso_or_none
 
