@@ -73,7 +73,7 @@ ve plot memo
 
 ```text
 src/
-  volatility_entropy/
+  multi_scale_volatility/
     config/
     plotting/
     preprocessing/

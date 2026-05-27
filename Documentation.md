@@ -307,13 +307,13 @@ The truncation report is saved as: `data/final/truncation_report.json`
 For $R^{\ast}$:
 
 ```text
-mean_log_return: 1.381445428226864e-07
+mean_log_return: 1.3814454282268642e-07
 variance_log_return: 8.257150232019612e-08
 std_log_return: 0.00028735257493225306
 min_log_return: -0.0097635255221106
 max_log_return: 0.0126936410859073
 median_log_return: 0.0
-skewness_log_return: 0.15778024187331044
+skewness_log_return: 0.15778024187331052
 kurtosis_log_return: 44.2160995969573
 ```
 
@@ -411,9 +411,9 @@ Shuffled baseline:
 
 ```text
 rows: 735,232
-mean_log_return: 1.381445428226864e-07
-population_variance_log_return: 8.257150232019612e-08
-population_std_log_return: 0.00028735257493225306
+mean_log_return: 1.381445428226863e-07
+population_variance_log_return: 8.257150232019614e-08
+population_std_log_return: 0.0002873525749322531
 min_log_return: -0.0097635255221106
 max_log_return: 0.0126936410859073
 ```
@@ -424,9 +424,9 @@ Gaussian baseline:
 rows: 735,232
 target_mean_log_return: 0.0
 target_population_variance_log_return: 8.257150232019612e-08
-realized_mean_log_return: 1.1733939639875955e-07
-realized_population_variance_log_return: 8.249276080303108e-08
-realized_population_std_log_return: 0.0002872155302260501
+realized_mean_log_return: 1.1733939639875951e-07
+realized_population_variance_log_return: 8.249276080303111e-08
+realized_population_std_log_return: 0.00028721553022605014
 min_log_return: -0.0015116429800731662
 max_log_return: 0.0013819795205624716
 ```
@@ -676,24 +676,24 @@ For the final EUR/USD series, most detail-layer energy is concentrated at the
 finest scales:
 
 ```text
-D_01 detail_energy_share: 0.5128464888450802
-D_02 detail_energy_share: 0.24912090865546974
-D_03 detail_energy_share: 0.12177649049781977
+D_01 detail_energy_share: 0.5128464888450901
+D_02 detail_energy_share: 0.2491209086554722
+D_03 detail_energy_share: 0.1217764904978138
 ```
 
 The final approximation energy is small relative to total component energy:
 
 ```text
-A_11 total_component_energy_share: 0.00038432560825245565
+A_11 total_component_energy_share: 0.0003843256082527
 ```
 
 The component energy sum reconstructs the original return energy to numerical
 precision:
 
 ```text
-final energy_reconstruction_gap: 1.5050460877574778e-14
-shuffle energy_reconstruction_gap: 1.7520707107365752e-14
-gaussian energy_reconstruction_gap: 2.0122792321330962e-14
+final energy_reconstruction_gap: 1.7458257062230587e-14
+shuffle energy_reconstruction_gap: 2.0795865030009963e-14
+gaussian energy_reconstruction_gap: 2.1184443088628768e-14
 ```
 
 ---
@@ -905,17 +905,17 @@ entropy_gap_gaussian
 Entropy gaps are small across most components. Examples:
 
 ```text
-D_01 entropy_gap_shuffle: 0.0002695456277962416
-D_01 entropy_gap_gaussian: 0.00020682881885636384
+D_01 entropy_gap_shuffle: 0.0002695456277962
+D_01 entropy_gap_gaussian: 0.0002068288188563
 
-D_06 entropy_gap_shuffle: 0.0019306019646548878
-D_06 entropy_gap_gaussian: 0.0012652754256139431
+D_06 entropy_gap_shuffle: 0.0019306019646548
+D_06 entropy_gap_gaussian: 0.0012652754256139
 
 D_11 entropy_gap_shuffle: 0.003101733050344002
-D_11 entropy_gap_gaussian: -0.0003802058801183339
+D_11 entropy_gap_gaussian: -0.0003802058801183
 
-A_11 entropy_gap_shuffle: -0.00459063275952265
-A_11 entropy_gap_gaussian: -0.00011979411067764012
+A_11 entropy_gap_shuffle: -0.0045906327595226
+A_11 entropy_gap_gaussian: -0.0001197941106776
 ```
 
 The small magnitude of the gaps is consistent with the high normalized entropy
@@ -1449,7 +1449,7 @@ figure_01_decomposition_example.png
 Shows selected components from the EUR/USD decomposition:
 
 $$
-R^{\ast},\quad D_1,\quad D_2,\quad D_5,\quad D_8,\quad D_{11},\quad A_{11}
+R^{\ast},\quad D_1,\quad D_3,\quad D_6,\quad D_9,\quad D_{11},\quad A_{11}
 $$
 
 with observation index on the x-axis.

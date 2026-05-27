@@ -18,11 +18,11 @@ dependencies = [
 ]
 
 [project.scripts]
-ve = "volatility_entropy.cli:main"
+ve = "multi_scale_volatility.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["volatility_entropy*"]
+include = ["multi_scale_volatility*"]

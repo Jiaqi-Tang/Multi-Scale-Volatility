@@ -104,13 +104,6 @@ def create_memo_plots(
             paths.output_dir / "figure_05_cross_scale_correlation.png",
             k=k,
         ),
-        plot_memo_cross_scale_correlation(
-            final_decomposition,
-            shuffle_decomposition,
-            paths.output_dir / "figure_05_cross_scale_correlation_same_scale.png",
-            k=k,
-            same_scale=True,
-        ),
         plot_memo_entropy_profile(
             entropy,
             paths.output_dir / "figure_06_entropy_profile.png",
@@ -375,7 +368,6 @@ def plot_memo_cross_scale_correlation(
     shuffle_decomposition: pd.DataFrame,
     output_path: Path,
     k: int,
-    same_scale: bool = False,
 ) -> Path:
     components = decomposition_components(k, include_original=False)
     final_corr = absolute_component_correlation(
@@ -389,26 +381,16 @@ def plot_memo_cross_scale_correlation(
     fig, axes = plt.subplots(1, 2, figsize=(14, 6.2))
     final_axis, excess_axis = axes
 
-    if same_scale:
-        final_vmin, final_vmax = -1.0, 1.0
-        excess_vmin, excess_vmax = -1.0, 1.0
-        final_cmap = "Spectral_r"
-        excess_cmap = "Spectral_r"
-        title_suffix = " (shared [-1, 1] scale)"
-    else:
-        final_vmin, final_vmax = 0.0, 1.0
-        max_abs_excess = float(np.nanmax(np.abs(excess_corr.to_numpy())))
-        excess_limit = max(0.05, max_abs_excess)
-        excess_vmin, excess_vmax = -excess_limit, excess_limit
-        final_cmap = "viridis"
-        excess_cmap = "coolwarm"
-        title_suffix = ""
+    final_vmin, final_vmax = 0.0, 1.0
+    max_abs_excess = float(np.nanmax(np.abs(excess_corr.to_numpy())))
+    excess_limit = max(0.05, max_abs_excess)
+    excess_vmin, excess_vmax = -excess_limit, excess_limit
 
     final_image = final_axis.imshow(
         final_corr.to_numpy(),
         vmin=final_vmin,
         vmax=final_vmax,
-        cmap=final_cmap,
+        cmap="viridis",
         aspect="equal",
     )
     final_axis.set_title("EUR/USD Absolute Component Correlation")
@@ -420,7 +402,7 @@ def plot_memo_cross_scale_correlation(
         excess_corr.to_numpy(),
         vmin=excess_vmin,
         vmax=excess_vmax,
-        cmap=excess_cmap,
+        cmap="coolwarm",
         aspect="equal",
     )
     excess_axis.set_title("Excess Correlation vs Shuffled Baseline")
@@ -438,7 +420,7 @@ def plot_memo_cross_scale_correlation(
         axis.set_xticklabels(components, rotation=45, ha="right")
         axis.set_yticklabels(components)
 
-    fig.suptitle(f"Cross-Scale Volatility Coupling{title_suffix}")
+    fig.suptitle("Cross-Scale Volatility Coupling")
     fig.tight_layout()
     fig.savefig(output_path, dpi=FIGURE_DPI)
     plt.close(fig)
