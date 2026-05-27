@@ -44,34 +44,42 @@ Ensure that Python 3.13 is installed
 Install dependencies:
 
 ```powershell
-pip install -r requirements.txt
+pip install -e .
 ```
 
 Run the full pipeline:
 
 ```powershell
-python scripts/run_all.py
+ve run-all
 ```
 
 Or run each step explicitly:
 
 ```powershell
-python scripts/run_preprocessing.py
-python scripts/run_length_standardization.py
-python scripts/run_baselines.py
-python scripts/run_decomposition.py
-python scripts/run_volatility.py
-python scripts/run_entropy.py
-python scripts/run_eda_plots.py
-python scripts/run_decomposition_plots.py
-python scripts/run_volatility_plots.py
-python scripts/run_entropy_plots.py
-python scripts/run_memo_plots.py
+ve preprocess
+ve standardize
+ve baselines
+ve decompose
+ve volatility
+ve entropy
+ve plot eda
+ve plot decomposition
+ve plot volatility
+ve plot entropy
+ve plot memo
 ```
 
 ## Repository Structure
 
 ```text
+src/
+  multi_scale_volatility/
+    config/
+    plotting/
+    preprocessing/
+    stats/
+    utils/
+
 data/
   raw/
   intermediate/
@@ -87,20 +95,6 @@ plots/
   eda/
   results/
   memo/
-
-scripts/
-  run_preprocessing.py
-  run_length_standardization.py
-  run_baselines.py
-  run_decomposition.py
-  run_volatility.py
-  run_entropy.py
-  run_eda_plots.py
-  run_decomposition_plots.py
-  run_volatility_plots.py
-  run_entropy_plots.py
-  run_memo_plots.py
-  run_all.py
 
 Documentation.md
 Memo.md
