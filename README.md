@@ -69,12 +69,17 @@ ve plot entropy
 ve plot memo
 ```
 
-The legacy `scripts/run_*.py` entry points are still available after installing
-the project in editable mode.
-
 ## Repository Structure
 
 ```text
+src/
+  volatility_entropy/
+    config/
+    plotting/
+    preprocessing/
+    stats/
+    utils/
+
 data/
   raw/
   intermediate/
@@ -90,20 +95,6 @@ plots/
   eda/
   results/
   memo/
-
-scripts/
-  run_preprocessing.py
-  run_length_standardization.py
-  run_baselines.py
-  run_decomposition.py
-  run_volatility.py
-  run_entropy.py
-  run_eda_plots.py
-  run_decomposition_plots.py
-  run_volatility_plots.py
-  run_entropy_plots.py
-  run_memo_plots.py
-  run_all.py
 
 Documentation.md
 Memo.md

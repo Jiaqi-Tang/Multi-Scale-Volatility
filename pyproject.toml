@@ -18,15 +18,11 @@ dependencies = [
 ]
 
 [project.scripts]
-ve = "src.cli:main"
+ve = "volatility_entropy.cli:main"
 
 [tool.setuptools]
-packages = [
-  "src",
-  "src.config",
-  "src.preprocessing",
-  "src.plotting",
-  "src.plotting.primitives",
-  "src.stats",
-  "src.utils",
-]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["volatility_entropy*"]
