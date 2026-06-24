@@ -56,7 +56,7 @@ Install dependencies:
 pip install -e .
 ```
 
-Run the full V1.1 pipeline:
+Run the full V1.1 pipeline (runtime around `14min`):
 
 ```powershell
 ve run-all

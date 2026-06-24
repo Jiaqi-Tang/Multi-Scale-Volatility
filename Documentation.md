@@ -1542,9 +1542,7 @@ The second panel shows empirical detail energy share minus each baseline median.
 The shaded bands are transformed into the same excess scale:
 
 $$
-p_k^{EURUSD} - p_{k,95}^{baseline}
-\quad \text{to} \quad
-p_k^{EURUSD} - p_{k,05}^{baseline}
+p_k^{EURUSD} - p_{k,95}^{baseline} \quad \text{to} \quad p_k^{EURUSD} - p_{k,05}^{baseline}
 $$
 
 **Figure 5: Cross-scale correlation**

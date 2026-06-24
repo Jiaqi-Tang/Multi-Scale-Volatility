@@ -133,7 +133,7 @@ Figure 4 shows empirical detail energy share across scales against shuffled and 
 
 The empirical series exhibits excess finest-scale energy concentrated in the first decomposition layer, followed by a relative energy deficit at intermediate scales. Differences gradually decay toward zero at larger scales.
 
-Relative to the shuffled baseline median, the empirical process exhibits a redistribution of volatility energy toward the finest decomposition scales.
+Relative to the shuffled baseline median and envelope, the empirical process exhibits a redistribution of volatility energy toward the finest decomposition scales.
 
 ![Energy share and excess energy by scale](plots/memo/figure_04_energy_profile.png)
 
@@ -153,7 +153,7 @@ Permutation entropy was computed as an exploratory measure of ordinal complexity
 
 Figure 6 shows permutation entropy across scales for the empirical series against shuffled and Gaussian baseline medians with 5-95% envelopes.
 
-Across all scales, normalized permutation entropy remained close to the theoretical reference value of approximately $0.9908$ for both empirical and baseline series, with empirical entropy mostly inside the baseline envelopes. Although deviations become visually larger at coarser scales, these layers contain fewer effective observations and higher estimator variance, making the apparent trend difficult to interpret robustly.
+Across all scales, normalized permutation entropy remained close to the theoretical reference value of approximately $0.9908$ for both empirical and baseline series, with lower empirical entropy on fine scales. Although deviations become visually larger at coarser scales, these layers contain fewer effective observations and higher estimator variance, making the apparent trend difficult to interpret robustly.
 
 ![Normalized permutation entropy](plots/memo/figure_06_entropy_profile.png)
 
@@ -167,7 +167,7 @@ At the same time, the broad positive cross-scale correlations suggest that volat
 
 Several limitations remain.
 
-Despite strong volatility decomposition effects, entropy differences remained comparatively weak under the current specification. While entropy remains as a potentially useful and interesting diagnostic statistic, current findings lack the robustness and significance to produce meaningful results.
+Despite strong volatility decomposition effects, entropy differences remained comparatively weak under the current specification. While entropy remains as a potentially useful and interesting diagnostic statistic, current findings lack the stability and effect size needed to support a strong interpretation.
 
 The analysis uses only OHLC price data and does not incorporate volume, order flow, or options-implied information. The decomposition is global and static over the full sample period, preventing direct analysis of regime transitions or localized market events.
 
