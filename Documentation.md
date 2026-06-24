@@ -319,15 +319,24 @@ kurtosis_log_return: 44.2160995969573
 
 ---
 
-# Baseline Series
+# Monte Carlo Baseline Series
 
-Objective: Create baseline time series such that entropy can be interpreted against a baseline entropy.
+Objective: Create baseline time series so empirical EUR/USD diagnostics can be
+interpreted against baseline distributions rather than against one random draw.
 
 ## Design choices
 
 Baseline series are generated from the standardized final return series $R^{\ast}$.
 
-All baseline series have length $|R^{baseline}| = N^{\ast}$, and use the same timestamp index as $R^{\ast}$.
+V1.1 uses:
+
+```text
+100 shuffled simulations
+100 Gaussian simulations
+```
+
+All baseline simulations have length $|R^{baseline}| = N^{\ast}$, and use the
+same timestamp index as $R^{\ast}$.
 
 The timestamps are retained as alignment metadata; the baseline computations are conducted on ordered return index:
 
@@ -335,17 +344,28 @@ $$
 i = 1,2,\ldots,N^{\ast}
 $$
 
-## Shuffled Baseline
+The Monte Carlo configuration is fixed in code:
 
-The shuffled baseline is a random permutation of the standardized returns:
+```text
+n_simulations: 100 per baseline type
+baseline_types: shuffle, gaussian
+master_seed: 20260609
+quantiles: 0.05, 0.50, 0.95
+quantile method: linear
+```
+
+For reproducibility, every simulation receives a deterministic child seed
+derived from the master seed, baseline type, and simulation id.
+
+## Shuffled Baselines
+
+Each shuffled baseline is a random permutation of the standardized returns:
 
 $$
-R^{shuffle} = \pi(R^{\ast})
+R^{shuffle,m} = \pi_m(R^{\ast}), \quad m=0,\ldots,99
 $$
 
 where $\pi$ is a random permutation.
-
-Random seed: $137$
 
 Properties preserved:
 
@@ -360,15 +380,17 @@ Property destroyed:
 Output:
 
 ```text
-data/baselines/eurusd_5m_log_returns_shuffle.csv
+data/monte_carlo_baselines/returns/shuffle/shuffle_sim_000.parquet
+...
+data/monte_carlo_baselines/returns/shuffle/shuffle_sim_099.parquet
 ```
 
-## Brownian / Gaussian Baseline
+## Gaussian Baselines
 
-The Gaussian baseline is generated as:
+Each Gaussian baseline is generated as:
 
 $$
-R^{BM}_i \sim \mathcal{N}(0, \sigma_R^2)
+R^{BM,m}_i \sim \mathcal{N}(0, \sigma_R^2), \quad m=0,\ldots,99
 $$
 
 where:
@@ -383,9 +405,11 @@ $$
 \sigma_R^2 = \frac{1}{N^{\ast}}\sum_{i=1}^{N^{\ast}}(r_i - \bar{r})^2
 $$
 
-where $\sigma_R^2 = 8.257150232019612 \times 10^{-8}$
+where $\sigma_R^2 = 8.257150232019612 \times 10^{-8}$.
 
-Random seed: $271$
+Gaussian simulations are sampled around zero using the empirical population
+variance. They are not rescaled after sampling; realized means and variances are
+recorded for audit.
 
 Properties targeted:
 
@@ -396,55 +420,52 @@ Properties targeted:
 Output:
 
 ```text
-data/baselines/eurusd_5m_log_returns_gaussian.csv
+data/monte_carlo_baselines/returns/gaussian/gaussian_sim_000.parquet
+...
+data/monte_carlo_baselines/returns/gaussian/gaussian_sim_099.parquet
 ```
 
-The baseline report is saved as:
+## Baseline Decompositions
+
+Each baseline simulation is decomposed using the same block-average
+decomposition as the empirical series. The decomposition files are saved as
+Parquet:
 
 ```text
-data/baselines/baselines_report.json
+data/monte_carlo_baselines/decomposition/shuffle/shuffle_decomposition_sim_000.parquet
+...
+data/monte_carlo_baselines/decomposition/gaussian/gaussian_decomposition_sim_099.parquet
 ```
 
-## Results
-
-Shuffled baseline:
+The baseline audit and configuration files are:
 
 ```text
-rows: 735,232
-mean_log_return: 1.381445428226863e-07
-population_variance_log_return: 8.257150232019614e-08
-population_std_log_return: 0.0002873525749322531
-min_log_return: -0.0097635255221106
-max_log_return: 0.0126936410859073
+results/monte_carlo_baselines/baseline_simulation_audit.csv
+results/monte_carlo_baselines/monte_carlo_config.json
+results/monte_carlo_baselines/runtime_log.csv
 ```
 
-Gaussian baseline:
-
-```text
-rows: 735,232
-target_mean_log_return: 0.0
-target_population_variance_log_return: 8.257150232019612e-08
-realized_mean_log_return: 1.1733939639875951e-07
-realized_population_variance_log_return: 8.249276080303111e-08
-realized_population_std_log_return: 0.00028721553022605014
-min_log_return: -0.0015116429800731662
-max_log_return: 0.0013819795205624716
-```
+The audit table records baseline type, simulation id, seed, length, realized
+mean, realized population variance, realized population standard deviation,
+minimum, maximum, output paths, and decomposition reconstruction error.
 
 ---
 
 # Block-Average Multi-Scale Decomposition
 
-Objective: Decompose the final return series and baseline series into scale-indexed
-detail layers and a final approximation layer.
+Objective: Decompose the final return series and each Monte Carlo baseline
+simulation into scale-indexed detail layers and a final approximation layer.
 
 ## Design choices
 
-The decomposition is applied to:
+The empirical decomposition is applied to:
 
 $$
-R^{\ast},\quad R^{shuffle},\quad R^{BM}
+R^{\ast}
 $$
+
+The same decomposition is then applied to every shuffled and Gaussian Monte
+Carlo baseline simulation.
 
 For each scale:
 
@@ -518,18 +539,24 @@ A_11
 Only $D_1,\ldots,D_{11}$, $A_{11}$, and the original series are saved. Intermediate
 approximation layers $A_1,\ldots,A_{10}$ are computed internally but not exported.
 
-The decomposition outputs are:
+The empirical decomposition output is:
 
 ```text
 data/decomposition/final_decomposition.csv
-data/decomposition/shuffle_decomposition.csv
-data/decomposition/gaussian_decomposition.csv
 data/decomposition/decomposition_report.json
+```
+
+Monte Carlo decomposition outputs are saved as Parquet under:
+
+```text
+data/monte_carlo_baselines/decomposition/shuffle/
+data/monte_carlo_baselines/decomposition/gaussian/
 ```
 
 ## Validation
 
-For each decomposed series, reconstruction error is computed as:
+For each decomposed empirical or simulated series, reconstruction error is
+computed as:
 
 $$
 \epsilon_i = \mathrm{original}_i - \left(A_{11,i} + \sum_{k=1}^{11}D_{k,i}\right)
@@ -541,21 +568,16 @@ $$
 \max_i |\epsilon_i| > 10^{-12}
 $$
 
-All three decompositions reconstruct to machine precision.
+The empirical decomposition reconstructs to machine precision.
 
 ```text
 final:
   max_abs_reconstruction_error: 3.469446951953614e-18
   mean_abs_reconstruction_error: 2.2820538114180538e-20
-
-shuffle:
-  max_abs_reconstruction_error: 1.734723475976807e-18
-  mean_abs_reconstruction_error: 2.348456095110165e-20
-
-gaussian:
-  max_abs_reconstruction_error: 4.336808689942018e-19
-  mean_abs_reconstruction_error: 2.874568672696032e-20
 ```
+
+Monte Carlo reconstruction errors are recorded per simulation in
+`results/monte_carlo_baselines/baseline_simulation_audit.csv`.
 
 ---
 
@@ -566,17 +588,15 @@ components.
 
 ## Design choices
 
-Volatility metrics are computed for:
+Empirical volatility metrics are computed for:
 
 $$
 D_1,\ldots,D_{11},A_{11}
 $$
 
-for each of:
-
-$$
-R^{\ast},\quad R^{shuffle},\quad R^{BM}
-$$
+for $R^{\ast}$. The same volatility metrics are computed for every Monte Carlo
+baseline decomposition and summarized separately in
+`results/monte_carlo_baselines`.
 
 Let a decomposition component be:
 
@@ -642,7 +662,7 @@ results/volatility/layer_volatility.csv
 results/volatility/volatility_report.json
 ```
 
-The volatility CSV has one row per series and component:
+The empirical volatility CSV has one row per component:
 
 ```text
 series
@@ -692,8 +712,6 @@ precision:
 
 ```text
 final energy_reconstruction_gap: 1.7458257062230587e-14
-shuffle energy_reconstruction_gap: 2.0795865030009963e-14
-gaussian energy_reconstruction_gap: 2.1184443088628768e-14
 ```
 
 ---
@@ -705,17 +723,15 @@ component.
 
 ## Design choices
 
-Permutation entropy is computed for:
+Empirical permutation entropy is computed for:
 
 $$
 D_1,\ldots,D_{11},A_{11}
 $$
 
-for each of:
-
-$$
-R^{\ast},\quad R^{shuffle},\quad R^{BM}
-$$
+for $R^{\ast}$. The same entropy calculation is run for every Monte Carlo
+baseline decomposition and summarized separately in
+`results/monte_carlo_baselines`.
 
 The embedding dimension and delay are:
 
@@ -792,7 +808,7 @@ results/entropy/layer_entropy.csv
 results/entropy/entropy_report.json
 ```
 
-The entropy CSV has one row per series and component:
+The empirical entropy CSV has one row per component:
 
 ```text
 series
@@ -848,78 +864,113 @@ entropy estimates.
 
 ---
 
-# Entropy Gap Metrics
+# Monte Carlo Metric Summaries and Comparisons
 
-Objective: Compare EUR/USD ordering structure against the shuffled and Gaussian
-baselines.
+Objective: summarize baseline variability and compare empirical EUR/USD
+diagnostics against the simulated baseline distributions.
 
-## Design choices
+## Simulation-level metric tables
 
-Entropy gaps are computed using normalized entropy.
-
-Against the shuffled baseline:
-
-$$
-\Delta H_c^{shuffle} = H_c^{shuffle,norm} - H_c^{EURUSD,norm}
-$$
-
-Against the Gaussian baseline:
-
-$$
-\Delta H_c^{BM} = H_c^{BM,norm} - H_c^{EURUSD,norm}
-$$
-
-Positive values indicate that the baseline has higher normalized entropy than
-EUR/USD at component $c$. Under this interpretation, positive gaps suggest more
-temporal ordering structure in EUR/USD than in the baseline at that component.
-
-Negative values indicate that EUR/USD has higher normalized entropy than the
-baseline at that component.
-
-## Outputs
-
-Entropy gap results are saved as:
+Every baseline simulation is run through the same metric calculations as the
+empirical series. Simulation-level outputs are saved under
+`results/monte_carlo_baselines`:
 
 ```text
-results/entropy/entropy_gaps.csv
+layer_volatility_simulations.csv
+layer_entropy_simulations.csv
+acf_simulations.csv
+component_acf_simulations.csv
+abs_component_correlation_simulations.csv
 ```
 
-The entropy gap CSV contains:
+The simulation tables include `baseline_type` and `simulation_id`, along with
+the relevant component, lag, metric, or component-pair identifiers.
+
+## Summary tables
+
+For each baseline type and each pointwise diagnostic, V1.1 computes:
 
 ```text
-component
-k
-component_type
-scale_minutes
-scale_days
-repeat_length
-final_normalized_entropy
-shuffle_normalized_entropy
-gaussian_normalized_entropy
-entropy_gap_shuffle
-entropy_gap_gaussian
+mean
+median
+std
+p05
+p95
+min
+max
 ```
 
-## Results
+Quantiles use linear interpolation:
 
-Entropy gaps are small across most components. Examples:
+```python
+np.quantile(values, [0.05, 0.5, 0.95], method="linear")
+```
+
+Summary outputs are:
 
 ```text
-D_01 entropy_gap_shuffle: 0.0002695456277962
-D_01 entropy_gap_gaussian: 0.0002068288188563
-
-D_06 entropy_gap_shuffle: 0.0019306019646548
-D_06 entropy_gap_gaussian: 0.0012652754256139
-
-D_11 entropy_gap_shuffle: 0.003101733050344002
-D_11 entropy_gap_gaussian: -0.0003802058801183
-
-A_11 entropy_gap_shuffle: -0.0045906327595226
-A_11 entropy_gap_gaussian: -0.0001197941106776
+layer_volatility_summary.csv
+layer_entropy_summary.csv
+acf_summary.csv
+component_acf_summary.csv
+abs_component_correlation_summary.csv
 ```
 
-The small magnitude of the gaps is consistent with the high normalized entropy
-observed across all series and components.
+Plots use the baseline median and the 5-95% envelope. The mean, standard
+deviation, minimum, and maximum are retained for exploratory analysis and sanity
+checks.
+
+The 5-95% bands are Monte Carlo baseline envelopes, not confidence intervals for
+the empirical EUR/USD statistic. They describe the distribution of each
+diagnostic under the chosen baseline-generating process.
+
+## Empirical comparison tables
+
+For each empirical diagnostic value, V1.1 records:
+
+```text
+empirical_value
+baseline_median
+baseline_p05
+baseline_p95
+difference_from_median
+percentile_rank
+inside_envelope
+above_envelope
+below_envelope
+outside_envelope
+```
+
+Percentile rank is:
+
+$$
+\frac{1}{100}\sum_{m=0}^{99}\mathbf{1}\{x_m^{baseline} \leq x^{EURUSD}\}
+$$
+
+Ties are counted with `<=`. Percentile rank is an empirical baseline diagnostic,
+not a formal p-value.
+
+Comparison outputs are:
+
+```text
+layer_volatility_empirical_comparison.csv
+layer_entropy_empirical_comparison.csv
+acf_empirical_comparison.csv
+component_acf_empirical_comparison.csv
+abs_component_correlation_empirical_comparison.csv
+```
+
+## Runtime logging
+
+Full pipeline timing is recorded in:
+
+```text
+results/monte_carlo_baselines/runtime_log.csv
+```
+
+Monte Carlo metric timings are split into reading, volatility, entropy, return
+ACF, component ACF, absolute component correlation, and simulation-total stages.
+Entropy is currently the slowest Monte Carlo metric stage.
 
 ---
 
@@ -942,17 +993,13 @@ plots/eda/returns
 
 ```text
 final_returns_line.png
-shuffle_returns_line.png
-gaussian_returns_line.png
 ```
 
-Each plot shows one return series:
+This plot shows the empirical standardized return series:
 
 $$
-R^{\ast},\quad R^{shuffle},\quad R^{BM}
+R^{\ast}
 $$
-
-respectively.
 
 x-axis:
 
@@ -984,8 +1031,7 @@ $$
 R^{BM}
 $$
 
-using density-normalized histograms. Vertical lines mark each series mean and
-median.
+using density-normalized histograms.
 
 **Final vs Gaussian ECDF**
 
@@ -1060,17 +1106,8 @@ $$
 X_i = |r_i|
 $$
 
-Each plot compares:
-
-$$
-R^{\ast},\quad R^{shuffle},\quad R^{BM}
-$$
-
-Dashed reference bands are:
-
-$$
-\pm \frac{1.96}{\sqrt{N^{\ast}}}
-$$
+In V1.1, each plot compares the empirical ACF line against shuffled and Gaussian
+Monte Carlo baseline medians with 5-95% envelopes.
 
 ## Decomposition EDA Plots
 
@@ -1194,15 +1231,20 @@ For larger-scale components, deterministic repeated block values are compressed
 before computing autocorrelation. The x-axis is then mapped back to original
 5-minute index lags.
 
+In V1.1, these grids show empirical component ACF lines against shuffled and
+Gaussian Monte Carlo baseline medians with 5-95% envelopes.
+
 **Absolute component correlation heatmaps**
 
 ```text
-final_abs_component_correlation.png
-shuffle_abs_component_correlation.png
-gaussian_abs_component_correlation.png
+abs_corr_empirical.png
+abs_corr_empirical_minus_shuffle_median.png
+abs_corr_outside_shuffle_envelope.png
+abs_corr_empirical_minus_gaussian_median.png
+abs_corr_outside_gaussian_envelope.png
 ```
 
-For each series, the plotted matrix is:
+The empirical matrix is:
 
 $$
 \rho_{c,d}^{abs} = \mathrm{Corr}(|X_c|, |X_d|)
@@ -1214,23 +1256,16 @@ $$
 c,d \in \{D_1,\ldots,D_{11},A_{11}\}
 $$
 
-The values are computed on the fully expanded, index-aligned decomposition
-components.
-
-**Final minus shuffled absolute component correlation**
-
-```text
-final_minus_shuffle_abs_component_correlation.png
-```
-
-The plotted matrix is:
+The difference matrices are:
 
 $$
-\rho_{c,d}^{EURUSD,abs} - \rho_{c,d}^{shuffle,abs}
+\rho_{c,d}^{EURUSD,abs} - \mathrm{median}_m(\rho_{c,d}^{baseline,m,abs})
 $$
 
 Positive values mean the final EUR/USD components have higher absolute
-cross-component correlation than the shuffled baseline for that component pair.
+cross-component correlation than the baseline median for that component pair.
+Outside-envelope heatmaps mark whether the empirical value lies outside the
+baseline 5-95% envelope.
 
 ## Volatility Result Plots
 
@@ -1275,16 +1310,19 @@ $$
 c \in \{D_1,\ldots,D_{11},A_{11}\}
 $$
 
-The difference plots show:
+In V1.1, the level plots show empirical EUR/USD with shuffled and Gaussian
+baseline medians and 5-95% envelopes.
+
+The difference plots show empirical EUR/USD minus the baseline median:
 
 $$
-p_c^{EURUSD} - p_c^{shuffle}
+p_c^{EURUSD} - \mathrm{median}_m(p_c^{shuffle,m})
 $$
 
 and:
 
 $$
-p_c^{EURUSD} - p_c^{BM}
+p_c^{EURUSD} - \mathrm{median}_m(p_c^{BM,m})
 $$
 
 with a horizontal zero reference line.
@@ -1315,16 +1353,17 @@ $$
 \sigma_{c,ann}^{RMS} = \sigma_c^{RMS}\sqrt{252 \times 24 \times 12}
 $$
 
-`rms_volatility_difference.png` plots:
+In V1.1, `rms_volatility.png` and `annualized_rms_volatility.png` show baseline
+medians and 5-95% envelopes. `rms_volatility_difference.png` plots:
 
 $$
-\sigma_c^{EURUSD,RMS} - \sigma_c^{shuffle,RMS}
+\sigma_c^{EURUSD,RMS} - \mathrm{median}_m(\sigma_c^{shuffle,m,RMS})
 $$
 
 and:
 
 $$
-\sigma_c^{EURUSD,RMS} - \sigma_c^{BM,RMS}
+\sigma_c^{EURUSD,RMS} - \mathrm{median}_m(\sigma_c^{BM,m,RMS})
 $$
 
 ## Entropy Result Plots
@@ -1362,11 +1401,8 @@ $$
 H_c^{norm} = \frac{H_c}{\log(6)}
 $$
 
-Both plots compare:
-
-$$
-R^{\ast},\quad R^{shuffle},\quad R^{BM}
-$$
+In V1.1, both plots compare the empirical EUR/USD entropy profile against
+shuffled and Gaussian Monte Carlo baseline medians with 5-95% envelopes.
 
 **Entropy gap plot**
 
@@ -1374,16 +1410,16 @@ $$
 entropy_gaps.png
 ```
 
-This plot shows:
+In V1.1, this plot shows empirical EUR/USD minus the baseline median:
 
 $$
-\Delta H_c^{shuffle} = H_c^{shuffle,norm} - H_c^{EURUSD,norm}
+\Delta H_c^{shuffle} = H_c^{EURUSD,norm} - \mathrm{median}_m(H_c^{shuffle,m,norm})
 $$
 
 and:
 
 $$
-\Delta H_c^{BM} = H_c^{BM,norm} - H_c^{EURUSD,norm}
+\Delta H_c^{BM} = H_c^{EURUSD,norm} - \mathrm{median}_m(H_c^{BM,m,norm})
 $$
 
 The horizontal reference line is:
@@ -1396,11 +1432,9 @@ $$
 
 ```text
 final_pattern_distribution.png
-shuffle_pattern_distribution.png
-gaussian_pattern_distribution.png
 ```
 
-Each figure is a $3 \times 4$ grid over:
+The empirical pattern grid is a $3 \times 4$ grid over:
 
 $$
 D_1,\ldots,D_{11},A_{11}
@@ -1484,16 +1518,11 @@ $$
 figure_03_abs_return_acf.png
 ```
 
-Plots:
+Plots empirical absolute-return autocorrelation against shuffled and Gaussian
+Monte Carlo baseline medians with 5-95% envelopes:
 
 $$
 \mathrm{Corr}(|r_i|, |r_{i-\ell}|)
-$$
-
-for:
-
-$$
-R^{\ast},\quad R^{shuffle},\quad R^{BM}
 $$
 
 **Figure 4: Energy profile**
@@ -1502,13 +1531,21 @@ $$
 figure_04_energy_profile.png
 ```
 
-Shows detail energy share:
+Shows empirical detail energy share with shuffled and Gaussian baseline medians
+and 5-95% envelopes:
 
 $$
 p_k^{detail} = \frac{E(D_k)}{\sum_{j=1}^{11}E(D_j)}
 $$
 
-and excess detail energy share relative to shuffled and Gaussian baselines.
+The second panel shows empirical detail energy share minus each baseline median.
+The shaded bands are transformed into the same excess scale:
+
+$$
+p_k^{EURUSD} - p_{k,95}^{baseline}
+\quad \text{to} \quad
+p_k^{EURUSD} - p_{k,05}^{baseline}
+$$
 
 **Figure 5: Cross-scale correlation**
 
@@ -1522,7 +1559,8 @@ $$
 \mathrm{Corr}(|X_c|, |X_d|)
 $$
 
-for EUR/USD components, and the difference against the shuffled baseline.
+for EUR/USD components, the difference against the shuffled baseline median, and
+an indicator for component pairs outside the shuffled 5-95% envelope.
 
 **Figure 6: Entropy profile**
 
@@ -1536,7 +1574,8 @@ $$
 H_c^{norm} = \frac{H_c}{\log(6)}
 $$
 
-for EUR/USD and baseline components. The dashed reference line uses:
+for EUR/USD and shuffled/Gaussian baseline medians with 5-95% envelopes. The
+dashed reference line uses:
 
 $$
 q = \left(\frac{1}{8}, \frac{3}{16}, \frac{3}{16}, \frac{3}{16}, \frac{3}{16}, \frac{1}{8}\right)

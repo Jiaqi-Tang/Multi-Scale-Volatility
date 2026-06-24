@@ -8,9 +8,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from multi_scale_volatility.config.columns import INDEX
+from multi_scale_volatility.config.names import INDEX
+from multi_scale_volatility.plotting.save import save_figure
 from multi_scale_volatility.plotting.style import FIGURE_DPI, GRID_FIGURE_DPI
-from multi_scale_volatility.scale_utils import decomposition_components
+from multi_scale_volatility.components import decomposition_components
 
 
 def plot_return_line(returns: np.ndarray, output_path: Path, title: str) -> Path:
@@ -22,7 +23,7 @@ def plot_return_line(returns: np.ndarray, output_path: Path, title: str) -> Path
     ax.set_ylabel("Log return")
     ax.ticklabel_format(axis="y", style="sci", scilimits=(-3, 3))
     fig.tight_layout()
-    fig.savefig(output_path, dpi=FIGURE_DPI)
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path
 
@@ -52,6 +53,6 @@ def plot_decomposition_layers(
         axis.ticklabel_format(axis="y", style="sci", scilimits=(-3, 3))
 
     axes[-1].set_xlabel("Observation index")
-    fig.savefig(output_path, dpi=GRID_FIGURE_DPI)
+    save_figure(fig, output_path, dpi=GRID_FIGURE_DPI)
     plt.close(fig)
     return output_path

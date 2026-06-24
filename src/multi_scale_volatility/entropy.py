@@ -13,11 +13,11 @@ import numpy as np
 import pandas as pd
 
 from multi_scale_volatility.components import component_specs
-from multi_scale_volatility.scale_utils import compress_component
+from multi_scale_volatility.components import compress_component
 from multi_scale_volatility.config.bundles import SeriesBundle
-from multi_scale_volatility.config.columns import COMPONENT, COMPONENT_TYPE, SERIES
-from multi_scale_volatility.config.constants import BASE_INTERVAL_MINUTES, DEFAULT_K
-from multi_scale_volatility.config.metric_columns import (
+from multi_scale_volatility.config.names import COMPONENT, COMPONENT_TYPE, SERIES
+from multi_scale_volatility.config.names import BASE_INTERVAL_MINUTES, DEFAULT_K
+from multi_scale_volatility.config.names import (
     EFFECTIVE_N,
     ENTROPY_GAP_GAUSSIAN,
     ENTROPY_GAP_SHUFFLE,
@@ -42,15 +42,15 @@ from multi_scale_volatility.config.paths import (
     SHUFFLE_DECOMPOSITION_CSV,
 )
 from multi_scale_volatility.config.path_utils import resolve_artifact_path
-from multi_scale_volatility.config.series import (
+from multi_scale_volatility.config.names import (
     SERIES_FINAL,
     SERIES_GAUSSIAN,
     SERIES_ORDER,
     SERIES_SHUFFLE,
 )
 from multi_scale_volatility.config.schemas import ENTROPY_GAP_INDEX_COLUMNS
-from multi_scale_volatility.utils.artifact_io import write_csv
-from multi_scale_volatility.utils.json_utils import write_json
+from multi_scale_volatility.io import write_csv
+from multi_scale_volatility.io import write_json
 from multi_scale_volatility.utils.validation import require_finite_array, require_positive_k
 
 EMBEDDING_DIMENSION = 3
@@ -249,6 +249,9 @@ def _permutation_entropy(
     embedding_dimension: int,
     delay: int,
 ) -> dict[str, Any]:
+    if embedding_dimension == 3 and delay == 1:
+        return _permutation_entropy_dim3_delay1(values)
+
     ordinal_windows = len(values) - (embedding_dimension - 1) * delay
     if ordinal_windows <= 0:
         raise ValueError("Series is too short for permutation entropy")
@@ -268,6 +271,41 @@ def _permutation_entropy(
     entropy = float(-np.sum(probabilities * np.log(probabilities)))
     normalized_entropy = float(
         entropy / math.log(math.factorial(embedding_dimension)))
+    return {
+        ORDINAL_WINDOWS: int(ordinal_windows),
+        "pattern_counts": counts,
+        PERMUTATION_ENTROPY: entropy,
+        NORMALIZED_ENTROPY: normalized_entropy,
+    }
+
+
+def _permutation_entropy_dim3_delay1(values: np.ndarray) -> dict[str, Any]:
+    ordinal_windows = len(values) - 2
+    if ordinal_windows <= 0:
+        raise ValueError("Series is too short for permutation entropy")
+
+    windows = np.lib.stride_tricks.sliding_window_view(values, 3)
+    patterns = np.argsort(windows, axis=1, kind="stable")
+    pattern_codes = patterns[:, 0] * 9 + patterns[:, 1] * 3 + patterns[:, 2]
+    code_to_label = {
+        5: "012",
+        7: "021",
+        11: "102",
+        15: "120",
+        19: "201",
+        21: "210",
+    }
+    counts_by_code = dict(zip(*np.unique(pattern_codes, return_counts=True), strict=True))
+    counts = {
+        label: int(counts_by_code.get(code, 0))
+        for code, label in code_to_label.items()
+    }
+    probabilities = np.array(
+        [count / ordinal_windows for count in counts.values() if count > 0],
+        dtype=float,
+    )
+    entropy = float(-np.sum(probabilities * np.log(probabilities)))
+    normalized_entropy = float(entropy / math.log(6))
     return {
         ORDINAL_WINDOWS: int(ordinal_windows),
         "pattern_counts": counts,

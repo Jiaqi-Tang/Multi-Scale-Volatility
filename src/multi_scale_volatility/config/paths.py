@@ -19,6 +19,12 @@ SHUFFLE_RETURNS_CSV = BASELINES_DIR / "eurusd_5m_log_returns_shuffle.csv"
 GAUSSIAN_RETURNS_CSV = BASELINES_DIR / "eurusd_5m_log_returns_gaussian.csv"
 BASELINES_REPORT_JSON = BASELINES_DIR / "baselines_report.json"
 
+MONTE_CARLO_BASELINES_DATA_DIR = Path("data/monte_carlo_baselines")
+MONTE_CARLO_BASELINE_RETURNS_DIR = MONTE_CARLO_BASELINES_DATA_DIR / "returns"
+MONTE_CARLO_BASELINE_DECOMPOSITION_DIR = (
+    MONTE_CARLO_BASELINES_DATA_DIR / "decomposition"
+)
+
 DECOMPOSITION_DIR = Path("data/decomposition")
 FINAL_DECOMPOSITION_CSV = DECOMPOSITION_DIR / "final_decomposition.csv"
 SHUFFLE_DECOMPOSITION_CSV = DECOMPOSITION_DIR / "shuffle_decomposition.csv"
@@ -34,9 +40,61 @@ LAYER_ENTROPY_CSV = ENTROPY_RESULTS_DIR / "layer_entropy.csv"
 ENTROPY_GAPS_CSV = ENTROPY_RESULTS_DIR / "entropy_gaps.csv"
 ENTROPY_REPORT_JSON = ENTROPY_RESULTS_DIR / "entropy_report.json"
 
+MONTE_CARLO_BASELINES_RESULTS_DIR = Path("results/monte_carlo_baselines")
+MONTE_CARLO_BASELINE_CONFIG_JSON = (
+    MONTE_CARLO_BASELINES_RESULTS_DIR / "monte_carlo_config.json"
+)
+MONTE_CARLO_BASELINE_AUDIT_CSV = (
+    MONTE_CARLO_BASELINES_RESULTS_DIR / "baseline_simulation_audit.csv"
+)
+MONTE_CARLO_BASELINE_RUNTIME_LOG_CSV = (
+    MONTE_CARLO_BASELINES_RESULTS_DIR / "runtime_log.csv"
+)
+MC_LAYER_VOLATILITY_SIMULATIONS_CSV = (
+    MONTE_CARLO_BASELINES_RESULTS_DIR / "layer_volatility_simulations.csv"
+)
+MC_LAYER_VOLATILITY_SUMMARY_CSV = (
+    MONTE_CARLO_BASELINES_RESULTS_DIR / "layer_volatility_summary.csv"
+)
+MC_LAYER_VOLATILITY_EMPIRICAL_COMPARISON_CSV = (
+    MONTE_CARLO_BASELINES_RESULTS_DIR / "layer_volatility_empirical_comparison.csv"
+)
+MC_LAYER_ENTROPY_SIMULATIONS_CSV = (
+    MONTE_CARLO_BASELINES_RESULTS_DIR / "layer_entropy_simulations.csv"
+)
+MC_LAYER_ENTROPY_SUMMARY_CSV = (
+    MONTE_CARLO_BASELINES_RESULTS_DIR / "layer_entropy_summary.csv"
+)
+MC_LAYER_ENTROPY_EMPIRICAL_COMPARISON_CSV = (
+    MONTE_CARLO_BASELINES_RESULTS_DIR / "layer_entropy_empirical_comparison.csv"
+)
+MC_ACF_SIMULATIONS_CSV = MONTE_CARLO_BASELINES_RESULTS_DIR / "acf_simulations.csv"
+MC_ACF_SUMMARY_CSV = MONTE_CARLO_BASELINES_RESULTS_DIR / "acf_summary.csv"
+MC_ACF_EMPIRICAL_COMPARISON_CSV = (
+    MONTE_CARLO_BASELINES_RESULTS_DIR / "acf_empirical_comparison.csv"
+)
+MC_COMPONENT_ACF_SIMULATIONS_CSV = (
+    MONTE_CARLO_BASELINES_RESULTS_DIR / "component_acf_simulations.csv"
+)
+MC_COMPONENT_ACF_SUMMARY_CSV = (
+    MONTE_CARLO_BASELINES_RESULTS_DIR / "component_acf_summary.csv"
+)
+MC_COMPONENT_ACF_EMPIRICAL_COMPARISON_CSV = (
+    MONTE_CARLO_BASELINES_RESULTS_DIR / "component_acf_empirical_comparison.csv"
+)
+MC_ABS_COMPONENT_CORRELATION_SIMULATIONS_CSV = (
+    MONTE_CARLO_BASELINES_RESULTS_DIR / "abs_component_correlation_simulations.csv"
+)
+MC_ABS_COMPONENT_CORRELATION_SUMMARY_CSV = (
+    MONTE_CARLO_BASELINES_RESULTS_DIR / "abs_component_correlation_summary.csv"
+)
+MC_ABS_COMPONENT_CORRELATION_EMPIRICAL_COMPARISON_CSV = (
+    MONTE_CARLO_BASELINES_RESULTS_DIR
+    / "abs_component_correlation_empirical_comparison.csv"
+)
+
 EDA_PLOTS_DIR = Path("plots/eda/returns")
 DECOMPOSITION_PLOTS_DIR = Path("plots/eda/decomposition")
 VOLATILITY_PLOTS_DIR = Path("plots/results/volatility")
 ENTROPY_PLOTS_DIR = Path("plots/results/entropy")
 MEMO_PLOTS_DIR = Path("plots/memo")
-

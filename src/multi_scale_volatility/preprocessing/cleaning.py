@@ -6,7 +6,7 @@ from typing import Any
 
 import pandas as pd
 
-from multi_scale_volatility.config.columns import TIMESTAMP_UTC
+from multi_scale_volatility.config.names import TIMESTAMP_UTC
 from multi_scale_volatility.preprocessing.constants import FIXED_EST, PRICE_COLUMNS, UTC
 from multi_scale_volatility.utils.time_utils import iso_or_none
 

@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from multi_scale_volatility.plotting.save import save_figure
 from multi_scale_volatility.plotting.style import (
     FINAL_COLOR,
     FINAL_DARK_COLOR,
@@ -16,7 +17,7 @@ from multi_scale_volatility.plotting.style import (
     SERIES_COLORS,
     SERIES_LABELS,
 )
-from multi_scale_volatility.scale_utils import decomposition_components
+from multi_scale_volatility.components import decomposition_components
 from multi_scale_volatility.stats import normal_quantiles_for_values
 
 
@@ -79,7 +80,7 @@ def plot_entropy_pattern_distribution_grid(
     fig.suptitle(
         f"Ordinal Pattern Distribution: {SERIES_LABELS[series]}", fontsize=16)
     fig.tight_layout()
-    fig.savefig(output_path, dpi=GRID_FIGURE_DPI)
+    save_figure(fig, output_path, dpi=GRID_FIGURE_DPI)
     plt.close(fig)
     return output_path
 
@@ -132,7 +133,7 @@ def plot_layer_histogram_grid(
     fig.suptitle(
         "Layer Distributions: EUR/USD vs Gaussian Baseline", fontsize=16)
     fig.tight_layout()
-    fig.savefig(output_path, dpi=GRID_FIGURE_DPI)
+    save_figure(fig, output_path, dpi=GRID_FIGURE_DPI)
     plt.close(fig)
     return output_path
 
@@ -174,6 +175,6 @@ def plot_layer_qq_grid(
 
     fig.suptitle("Layer QQ Plots vs N(0, Layer Variance)", fontsize=16)
     fig.tight_layout()
-    fig.savefig(output_path, dpi=GRID_FIGURE_DPI)
+    save_figure(fig, output_path, dpi=GRID_FIGURE_DPI)
     plt.close(fig)
     return output_path
