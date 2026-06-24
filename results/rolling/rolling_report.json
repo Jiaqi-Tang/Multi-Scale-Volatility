@@ -1,0 +1,21 @@
+{
+  "input_csv": "data\\final\\eurusd_5m_log_returns_final.csv",
+  "metadata_csv": "results\\rolling\\rolling_window_metadata.csv",
+  "summary_csv": "results\\rolling\\rolling_window_summary.csv",
+  "N": 735232,
+  "base_interval_minutes": 5,
+  "window_lengths": [
+    2048,
+    8192
+  ],
+  "step_size": 288,
+  "K_roll": 9,
+  "block_size_max": 512,
+  "reconstruction_tolerance": 1e-12,
+  "window_counts": {
+    "2048": 2546,
+    "8192": 2525
+  },
+  "max_abs_reconstruction_error": 3.469446951953614e-18,
+  "max_energy_reconstruction_gap_abs": 1.734723475976807e-18
+}
