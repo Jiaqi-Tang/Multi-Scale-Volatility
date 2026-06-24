@@ -7,16 +7,17 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from multi_scale_volatility.config.columns import COMPONENT, SERIES
-from multi_scale_volatility.config.metric_columns import ENTROPY_GAP_GAUSSIAN, ENTROPY_GAP_SHUFFLE
-from multi_scale_volatility.config.series import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_ORDER, SERIES_SHUFFLE
+from multi_scale_volatility.config.names import COMPONENT, SERIES
+from multi_scale_volatility.config.names import ENTROPY_GAP_GAUSSIAN, ENTROPY_GAP_SHUFFLE
+from multi_scale_volatility.config.names import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_ORDER, SERIES_SHUFFLE
+from multi_scale_volatility.plotting.save import save_figure
 from multi_scale_volatility.plotting.style import (
     FIGURE_DPI,
     GAUSSIAN_COLOR,
     SERIES_COLORS,
     SHUFFLE_COLOR,
 )
-from multi_scale_volatility.scale_utils import decomposition_components
+from multi_scale_volatility.components import decomposition_components
 
 
 def plot_series_metric(
@@ -55,7 +56,7 @@ def plot_series_metric(
     ax.grid(axis="y", alpha=0.25)
     ax.legend()
     fig.tight_layout()
-    fig.savefig(output_path, dpi=FIGURE_DPI)
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path
 
@@ -119,7 +120,7 @@ def plot_baseline_difference_metric(
     ax.grid(axis="y", alpha=0.25)
     ax.legend()
     fig.tight_layout()
-    fig.savefig(output_path, dpi=FIGURE_DPI)
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path
 
@@ -178,7 +179,7 @@ def plot_entropy_gaps(frame: pd.DataFrame, output_path: Path, k: int) -> Path:
     ax.grid(axis="y", alpha=0.25)
     ax.legend()
     fig.tight_layout()
-    fig.savefig(output_path, dpi=FIGURE_DPI)
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path
 

@@ -8,8 +8,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from multi_scale_volatility.plotting.save import save_figure
 from multi_scale_volatility.plotting.style import FIGURE_DPI
-from multi_scale_volatility.scale_utils import decomposition_components
+from multi_scale_volatility.components import decomposition_components
 from multi_scale_volatility.stats import (
     absolute_component_correlation,
     absolute_component_correlation_difference,
@@ -39,7 +40,7 @@ def plot_abs_component_correlation_heatmap(
     colorbar = fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04)
     colorbar.set_label("Pearson correlation of absolute components")
     fig.tight_layout()
-    fig.savefig(output_path, dpi=FIGURE_DPI)
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path
 
@@ -72,7 +73,7 @@ def plot_abs_component_correlation_difference_heatmap(
     colorbar = fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04)
     colorbar.set_label("Final minus shuffled correlation")
     fig.tight_layout()
-    fig.savefig(output_path, dpi=FIGURE_DPI)
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path
 

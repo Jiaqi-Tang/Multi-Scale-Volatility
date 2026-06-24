@@ -11,8 +11,8 @@ import pandas as pd
 
 from multi_scale_volatility.components import component_specs
 from multi_scale_volatility.config.bundles import SeriesBundle
-from multi_scale_volatility.config.columns import COMPONENT, COMPONENT_TYPE, ORIGINAL, SERIES
-from multi_scale_volatility.config.constants import (
+from multi_scale_volatility.config.names import COMPONENT, COMPONENT_TYPE, ORIGINAL, SERIES
+from multi_scale_volatility.config.names import (
     BASE_INTERVAL_MINUTES,
     DEFAULT_K,
     PERIODS_PER_HOUR,
@@ -28,7 +28,7 @@ from multi_scale_volatility.config.paths import (
     VOLATILITY_RESULTS_DIR,
 )
 from multi_scale_volatility.config.path_utils import resolve_artifact_path
-from multi_scale_volatility.config.metric_columns import (
+from multi_scale_volatility.config.names import (
     ANNUALIZED_RMS_VOLATILITY,
     APPROXIMATION_ENERGY,
     DETAIL_ENERGY_SHARE,
@@ -45,8 +45,8 @@ from multi_scale_volatility.config.metric_columns import (
     TOTAL_COMPONENT_ENERGY_SHARE,
     TOTAL_COMPONENT_ENERGY_SHARE_SUM,
 )
-from multi_scale_volatility.utils.artifact_io import write_csv
-from multi_scale_volatility.utils.json_utils import write_json
+from multi_scale_volatility.io import write_csv
+from multi_scale_volatility.io import write_json
 from multi_scale_volatility.utils.validation import require_finite_array, require_positive_k
 
 

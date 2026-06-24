@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from multi_scale_volatility.config.columns import (
+from multi_scale_volatility.config.names import (
     COMPONENT,
     COMPONENT_TYPE,
     INDEX,
@@ -11,7 +11,7 @@ from multi_scale_volatility.config.columns import (
     SERIES,
     TIMESTAMP_UTC,
 )
-from multi_scale_volatility.config.metric_columns import (
+from multi_scale_volatility.config.names import (
     ANNUALIZED_RMS_VOLATILITY,
     DETAIL_ENERGY_SHARE,
     EFFECTIVE_N,

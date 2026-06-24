@@ -10,9 +10,9 @@ import numpy as np
 import pandas as pd
 import math
 
-from multi_scale_volatility.config.constants import DEFAULT_K
-from multi_scale_volatility.config.columns import COMPONENT, COMPONENT_TYPE, INDEX, SERIES
-from multi_scale_volatility.config.metric_columns import DETAIL_ENERGY_SHARE, NORMALIZED_ENTROPY
+from multi_scale_volatility.config.names import DEFAULT_K
+from multi_scale_volatility.config.names import COMPONENT, COMPONENT_TYPE, INDEX, SERIES
+from multi_scale_volatility.config.names import DETAIL_ENERGY_SHARE, NORMALIZED_ENTROPY
 from multi_scale_volatility.config.paths import (
     FINAL_DECOMPOSITION_CSV,
     FINAL_RETURNS_CSV,
@@ -23,14 +23,14 @@ from multi_scale_volatility.config.paths import (
     SHUFFLE_DECOMPOSITION_CSV,
     VOLATILITY_CSV,
 )
-from multi_scale_volatility.config.series import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_SHUFFLE
-from multi_scale_volatility.plotting.primitives.distributions import add_mean_median_lines
-from multi_scale_volatility.plotting.readers import (
+from multi_scale_volatility.config.names import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_SHUFFLE
+from multi_scale_volatility.io import (
     read_decomposition,
     read_layer_entropy,
     read_returns,
     read_volatility,
 )
+from multi_scale_volatility.plotting.save import save_figure
 from multi_scale_volatility.plotting.style import (
     FIGURE_DPI,
     FINAL_COLOR,
@@ -46,7 +46,7 @@ from multi_scale_volatility.stats import (
     normal_quantiles_for_values,
 )
 from multi_scale_volatility.utils.validation import require_positive_k
-from multi_scale_volatility.scale_utils import decomposition_components
+from multi_scale_volatility.components import decomposition_components
 
 
 @dataclass(frozen=True)
@@ -151,7 +151,7 @@ def plot_memo_decomposition_example(
 
     axes[-1].set_xlabel("Observation index")
     fig.suptitle("EUR/USD Return Decomposition Across Representative Scales")
-    fig.savefig(output_path, dpi=FIGURE_DPI)
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path
 
@@ -183,14 +183,6 @@ def plot_memo_return_distribution(
         alpha=0.45,
         color=GAUSSIAN_COLOR,
         label="Gaussian baseline",
-    )
-    add_mean_median_lines(histogram_axis, final_returns,
-                          "EUR/USD", FINAL_DARK_COLOR)
-    add_mean_median_lines(
-        histogram_axis,
-        gaussian_returns,
-        "Gaussian",
-        GAUSSIAN_DARK_COLOR,
     )
     histogram_axis.set_title(
         "Return Distribution (zoomed to [-0.0015, 0.0015])")
@@ -225,7 +217,7 @@ def plot_memo_return_distribution(
 
     fig.suptitle("EUR/USD Returns vs Gaussian Baseline")
     fig.tight_layout()
-    fig.savefig(output_path, dpi=FIGURE_DPI)
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path
 
@@ -282,7 +274,7 @@ def plot_memo_abs_return_acf(
     axis.set_xlim(1, max_lag)
     axis.legend()
     fig.tight_layout()
-    fig.savefig(output_path, dpi=FIGURE_DPI)
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path
 
@@ -358,7 +350,7 @@ def plot_memo_energy_profile(
 
     fig.suptitle("Volatility Energy Redistribution Across Scales")
     fig.tight_layout()
-    fig.savefig(output_path, dpi=FIGURE_DPI)
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path
 
@@ -422,7 +414,7 @@ def plot_memo_cross_scale_correlation(
 
     fig.suptitle("Cross-Scale Volatility Coupling")
     fig.tight_layout()
-    fig.savefig(output_path, dpi=FIGURE_DPI)
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path
 
@@ -478,6 +470,6 @@ def plot_memo_entropy_profile(
     axis.grid(axis="y", alpha=0.25)
     axis.legend()
     fig.tight_layout()
-    fig.savefig(output_path, dpi=FIGURE_DPI)
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path

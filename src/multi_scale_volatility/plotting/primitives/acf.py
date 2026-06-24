@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from multi_scale_volatility.plotting.save import save_figure
 from multi_scale_volatility.plotting.style import (
     FIGURE_DPI,
     FINAL_COLOR,
@@ -15,7 +16,7 @@ from multi_scale_volatility.plotting.style import (
     GRID_FIGURE_DPI,
     SHUFFLE_COLOR,
 )
-from multi_scale_volatility.scale_utils import compress_component
+from multi_scale_volatility.components import compress_component
 from multi_scale_volatility.stats import autocorrelation, compressed_layer_autocorrelation
 
 
@@ -61,7 +62,7 @@ def plot_acf_comparison(
     ax.set_ylabel(f"ACF of {transform_label}")
     ax.legend()
     fig.tight_layout()
-    fig.savefig(output_path, dpi=FIGURE_DPI)
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path
 
@@ -121,6 +122,6 @@ def plot_layer_acf_grid(
 
     axes[0].legend(loc="upper right")
     axes[-1].set_xlabel("Lag")
-    fig.savefig(output_path, dpi=GRID_FIGURE_DPI)
+    save_figure(fig, output_path, dpi=GRID_FIGURE_DPI)
     plt.close(fig)
     return output_path

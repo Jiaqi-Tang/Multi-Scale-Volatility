@@ -7,6 +7,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
+from multi_scale_volatility.plotting.save import save_figure
 from multi_scale_volatility.plotting.style import FIGURE_DPI, FINAL_COLOR
 from multi_scale_volatility.stats import normal_quantiles_for_values
 
@@ -40,6 +41,6 @@ def plot_qq_against_zero_mean_gaussian(
     ax.set_ylabel("EUR/USD empirical quantile")
     ax.ticklabel_format(axis="both", style="sci", scilimits=(-3, 3))
     fig.tight_layout()
-    fig.savefig(output_path, dpi=FIGURE_DPI)
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path

@@ -1,9 +1,0 @@
-"""Canonical series labels used throughout the analysis."""
-
-SERIES_FINAL = "final"
-SERIES_SHUFFLE = "shuffle"
-SERIES_GAUSSIAN = "gaussian"
-
-SERIES_ORDER = (SERIES_FINAL, SERIES_SHUFFLE, SERIES_GAUSSIAN)
-BASELINE_SERIES = (SERIES_SHUFFLE, SERIES_GAUSSIAN)
-

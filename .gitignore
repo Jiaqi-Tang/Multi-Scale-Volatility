@@ -5,6 +5,9 @@
 data/intermediate/*.csv
 data/decomposition/*.csv
 
+# Baselines
+results/monte_carlo_baselines/*.csv
+
 # Python
 __pycache__/
 .ipynb_checkpoints/
@@ -15,3 +18,6 @@ plan/
 
 # Archive
 archive/
+
+# Parquet
+*.parquet

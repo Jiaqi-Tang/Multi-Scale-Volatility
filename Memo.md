@@ -73,10 +73,11 @@ Figure 1 illustrates the decomposition of EUR/USD returns.
 
 ### 2.3 Baseline Construction
 
-Two baseline series of length $N^{\ast}$ were constructed for comparison.
+Two baseline families of length $N^{\ast}$ were constructed for comparison,
+with 100 simulations in each family.
 
-- The shuffled baseline $R^{shuffle}$ was created by randomly permuting $R^{\ast}$.
-- The Gaussian baseline $R^{BM}$ was generated using independent Gaussian samples $R_i^{BM} \sim \mathcal{N}(0,\sigma_R^2)$ where $\sigma_R^2 = \mathrm{Var}(R^{\ast})$
+- Each shuffled baseline $R^{shuffle,m}$ was created by randomly permuting $R^{\ast}$, for $m=0,\ldots,99$.
+- Each Gaussian baseline $R^{BM,m}$ was generated using independent Gaussian samples $R_i^{BM,m} \sim \mathcal{N}(0,\sigma_R^2)$ where $\sigma_R^2 = \mathrm{Var}(R^{\ast})$, for $m=0,\ldots,99$.
 
 Together, these baselines isolate effects arising from:
 
@@ -84,7 +85,7 @@ Together, these baselines isolate effects arising from:
 - heavy-tailed behavior,
 - and genuine temporal organization.
 
-The shuffled baseline is particularly useful as it preserves the empirical marginal distribution and heavy tails while destroying temporal ordering. Differences against this baseline isolate effects arising from temporal organization rather than distributional properties.
+The shuffled baseline family is particularly useful as each simulation preserves the empirical marginal distribution and heavy tails while destroying temporal ordering. Differences against this baseline distribution isolate effects arising from temporal organization rather than distributional properties.
 
 ### 2.4 Diagnostics
 
@@ -112,7 +113,7 @@ This behavior is consistent with well-known stylized facts of financial returns,
 
 Although raw return autocorrelation is close to zero, absolute returns exhibit strong and persistent autocorrelation.
 
-Figure 3 shows the autocorrelation of absolute returns for the empirical series and baselines. The empirical series displays slowly decaying correlation and periodic structure near daily horizons, while shuffled and Gaussian baselines have no meaningful correlation.
+Figure 3 shows the autocorrelation of absolute returns for the empirical series together with shuffled and Gaussian baseline medians and 5-95% envelopes. The empirical series displays slowly decaying correlation and periodic structure near daily horizons, while shuffled and Gaussian baselines have no meaningful correlation.
 
 This behavior is consistent with volatility clustering and time-varying volatility regimes.
 
@@ -128,17 +129,17 @@ $$
 p_k^{detail}=\frac{E(D_k)}{\sum_{j=1}^{11}E(D_j)}, \text{ where } E(D_k)=\sum_i d_{k,i}^2
 $$
 
-Figure 4 shows detail energy share across scales together with excess energy relative to the shuffled and Gaussian baselines.
+Figure 4 shows empirical detail energy share across scales against shuffled and Gaussian baseline medians with 5-95% envelopes, together with excess energy relative to each baseline median.
 
 The empirical series exhibits excess finest-scale energy concentrated in the first decomposition layer, followed by a relative energy deficit at intermediate scales. Differences gradually decay toward zero at larger scales.
 
-Relative to the shuffled baseline, the empirical process exhibits a redistribution of volatility energy toward the finest decomposition scales.
+Relative to the shuffled baseline median and envelope, the empirical process exhibits a redistribution of volatility energy toward the finest decomposition scales.
 
 ![Energy share and excess energy by scale](plots/memo/figure_04_energy_profile.png)
 
 ### 4.2 Cross-Scale Volatility Coupling
 
-Figure 5 shows correlations between absolute decomposition components together with excess correlation relative to the shuffled baseline.
+Figure 5 shows correlations between absolute decomposition components, excess correlation relative to the shuffled baseline median, and component pairs outside the shuffled 5-95% envelope.
 
 The empirical series exhibits broad positive cross-scale coupling across decomposition layers. In contrast, the Gaussian baseline is nearly decorrelated, while the shuffled baseline retains only fine-scale correlations.
 
@@ -150,9 +151,9 @@ This suggests that volatility activity is not isolated to individual scales; per
 
 Permutation entropy was computed as an exploratory measure of ordinal complexity across decomposition layers.
 
-Figure 6 shows permutation entropy across scales for the empirical series and baselines.
+Figure 6 shows permutation entropy across scales for the empirical series against shuffled and Gaussian baseline medians with 5-95% envelopes.
 
-Across all scales, normalized permutation entropy remained close to the theoretical reference value of approximately $0.9908$ for both empirical and baseline series. Although deviations become visually larger at coarser scales, these layers contain fewer effective observations and higher estimator variance, making the apparent trend difficult to interpret robustly.
+Across all scales, normalized permutation entropy remained close to the theoretical reference value of approximately $0.9908$ for both empirical and baseline series, with lower empirical entropy on fine scales. Although deviations become visually larger at coarser scales, these layers contain fewer effective observations and higher estimator variance, making the apparent trend difficult to interpret robustly.
 
 ![Normalized permutation entropy](plots/memo/figure_06_entropy_profile.png)
 
@@ -160,13 +161,13 @@ Across all scales, normalized permutation entropy remained close to the theoreti
 
 The decomposition results suggest that EUR/USD volatility exhibits non-trivial organization across temporal scales.
 
-The excess finest-scale energy observed in the empirical series indicates that volatility is more concentrated into localized short-horizon bursts than in either baseline. This may be due to market microstructure effects, fragmented order flow, or localized bursts of trading activity. The relative energy deficit at intermediate scales may reflect the presence of intraday short-horizon market structure.
+The excess finest-scale energy observed in the empirical series indicates that volatility is more concentrated into localized short-horizon bursts than in either baseline median. This may be due to market microstructure effects, fragmented order flow, or localized bursts of trading activity. The relative energy deficit at intermediate scales may reflect the presence of intraday short-horizon market structure.
 
-At the same time, the broad positive cross-scale correlations suggest that volatility states are not isolated to specific decomposition layers, but instead shared across multiple scales simultaneously. The persistence of excess cross-scale correlation against the shuffled baseline suggests that this structure is not solely a consequence of the marginal return distribution, and may reflect broader volatility regimes spanning multiple horizons.
+At the same time, the broad positive cross-scale correlations suggest that volatility states are not isolated to specific decomposition layers, but instead shared across multiple scales simultaneously. The persistence of excess cross-scale correlation against the shuffled baseline envelope suggests that this structure is not solely a consequence of the marginal return distribution, and may reflect broader volatility regimes spanning multiple horizons.
 
 Several limitations remain.
 
-Despite strong volatility decomposition effects, entropy differences remained comparatively weak under the current specification. While entropy remains as a potentially useful and interesting diagnostic statistic, current findings lack the robustness and significance to produce meaningful results.
+Despite strong volatility decomposition effects, entropy differences remained comparatively weak under the current specification. While entropy remains as a potentially useful and interesting diagnostic statistic, current findings lack the stability and effect size needed to support a strong interpretation.
 
 The analysis uses only OHLC price data and does not incorporate volume, order flow, or options-implied information. The decomposition is global and static over the full sample period, preventing direct analysis of regime transitions or localized market events.
 

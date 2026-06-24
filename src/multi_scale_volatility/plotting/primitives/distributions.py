@@ -7,6 +7,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
+from multi_scale_volatility.plotting.save import save_figure
 from multi_scale_volatility.plotting.style import (
     FIGURE_DPI,
     FINAL_COLOR,
@@ -50,7 +51,7 @@ def plot_histogram_comparison(
     ax.ticklabel_format(axis="x", style="sci", scilimits=(-3, 3))
     ax.legend()
     fig.tight_layout()
-    fig.savefig(output_path, dpi=FIGURE_DPI)
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path
 
@@ -79,7 +80,7 @@ def plot_ecdf_comparison(
     ax.ticklabel_format(axis="x", style="sci", scilimits=(-3, 3))
     ax.legend()
     fig.tight_layout()
-    fig.savefig(output_path, dpi=FIGURE_DPI)
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
     plt.close(fig)
     return output_path
 

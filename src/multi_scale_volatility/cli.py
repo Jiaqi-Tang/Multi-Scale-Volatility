@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import logging
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -18,16 +17,10 @@ from multi_scale_volatility.entropy import (
     EntropyPaths,
     compute_entropy_metrics,
 )
-from multi_scale_volatility.config.constants import DEFAULT_K, GAUSSIAN_SEED, SHUFFLE_SEED
+from multi_scale_volatility.config.names import DEFAULT_K
 from multi_scale_volatility.config.paths import (
-    BASELINES_DIR,
     CLEAN_RETURNS_CSV,
     DECOMPOSITION_DIR,
-    DECOMPOSITION_PLOTS_DIR,
-    EDA_PLOTS_DIR,
-    ENTROPY_GAPS_CSV,
-    ENTROPY_PLOTS_DIR,
-    ENTROPY_REPORT_JSON,
     ENTROPY_RESULTS_DIR,
     FINAL_DECOMPOSITION_CSV,
     FINAL_RETURNS_CSV,
@@ -36,31 +29,38 @@ from multi_scale_volatility.config.paths import (
     INTERMEDIATE_DIR,
     LAYER_ENTROPY_CSV,
     MEMO_PLOTS_DIR,
+    MONTE_CARLO_BASELINE_AUDIT_CSV,
+    MONTE_CARLO_BASELINE_RUNTIME_LOG_CSV,
+    MONTE_CARLO_BASELINES_DATA_DIR,
+    MONTE_CARLO_BASELINES_RESULTS_DIR,
     RAW_METATRADER_DIR,
     SHUFFLE_DECOMPOSITION_CSV,
     SHUFFLE_RETURNS_CSV,
     TRUNCATION_REPORT_JSON,
     VOLATILITY_CSV,
-    VOLATILITY_PLOTS_DIR,
     VOLATILITY_RESULTS_DIR,
 )
 from multi_scale_volatility.length_standardization import LengthStandardizationPaths, standardize_length
+from multi_scale_volatility.monte_carlo_metrics import (
+    MonteCarloMetricPaths,
+    compute_monte_carlo_comparisons,
+    compute_monte_carlo_metrics,
+)
 from multi_scale_volatility.pipeline import PipelineOptions, run_all, run_core_pipeline, run_plot_pipeline
-from multi_scale_volatility.plotting.decomposition import DecompositionPlotPaths, create_decomposition_plots
-from multi_scale_volatility.plotting.eda import EdaPlotPaths, create_eda_plots
-from multi_scale_volatility.plotting.entropy import EntropyPlotPaths, create_entropy_plots
-from multi_scale_volatility.plotting.memo import MemoPlotPaths, create_memo_plots
-from multi_scale_volatility.plotting.volatility import VolatilityPlotPaths, create_volatility_plots
+from multi_scale_volatility.plotting.monte_carlo_baselines import (
+    MonteCarloBaselinePlotPaths,
+    create_monte_carlo_baseline_plots,
+    create_v11_memo_plots,
+)
 from multi_scale_volatility.preprocessing import PreprocessingPaths, run_preprocessing
+from multi_scale_volatility.runtime import configure_logging
 from multi_scale_volatility.volatility import VolatilityPaths, compute_volatility_metrics
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    logging.basicConfig(level=logging.INFO,
-                        format="%(levelname)s %(name)s: %(message)s")
-    logging.getLogger("matplotlib").setLevel(logging.WARNING)
+    configure_logging()
     handler = getattr(args, "handler", None)
     if handler is None:
         parser.print_help()
@@ -82,6 +82,8 @@ def build_parser() -> argparse.ArgumentParser:
     _add_decompose(subparsers)
     _add_volatility(subparsers)
     _add_entropy(subparsers)
+    _add_monte_carlo_metrics(subparsers)
+    _add_monte_carlo_comparisons(subparsers)
     _add_plot(subparsers)
     _add_run_all(subparsers)
 
@@ -115,11 +117,13 @@ def _add_standardize(
 
 def _add_baselines(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
-        "baselines", help="Create baseline return series.")
+        "baselines", help="Create Monte Carlo baseline series and decompositions.")
     parser.add_argument("--input-csv", type=Path, default=FINAL_RETURNS_CSV)
-    parser.add_argument("--output-dir", type=Path, default=BASELINES_DIR)
-    parser.add_argument("--shuffle-seed", type=int, default=SHUFFLE_SEED)
-    parser.add_argument("--gaussian-seed", type=int, default=GAUSSIAN_SEED)
+    parser.add_argument("--data-dir", type=Path,
+                        default=MONTE_CARLO_BASELINES_DATA_DIR)
+    parser.add_argument("--results-dir", type=Path,
+                        default=MONTE_CARLO_BASELINES_RESULTS_DIR)
+    parser.add_argument("--k", type=int, default=DEFAULT_K)
     parser.set_defaults(handler=_handle_baselines)
 
 
@@ -156,64 +160,72 @@ def _add_entropy(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]
     parser.set_defaults(handler=_handle_entropy)
 
 
+def _add_monte_carlo_metrics(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    parser = subparsers.add_parser(
+        "monte-carlo-metrics",
+        help="Compute metric tables and summaries for Monte Carlo baselines.",
+    )
+    parser.add_argument("--audit-csv", type=Path,
+                        default=MONTE_CARLO_BASELINE_AUDIT_CSV)
+    parser.add_argument("--results-dir", type=Path,
+                        default=MONTE_CARLO_BASELINES_RESULTS_DIR)
+    parser.add_argument("--runtime-log-csv", type=Path,
+                        default=MONTE_CARLO_BASELINE_RUNTIME_LOG_CSV)
+    parser.add_argument("--k", type=int, default=DEFAULT_K)
+    parser.set_defaults(handler=_handle_monte_carlo_metrics)
+
+
+def _add_monte_carlo_comparisons(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    parser = subparsers.add_parser(
+        "monte-carlo-comparisons",
+        help="Create empirical-vs-envelope comparison tables from existing MC metrics.",
+    )
+    parser.add_argument("--results-dir", type=Path,
+                        default=MONTE_CARLO_BASELINES_RESULTS_DIR)
+    parser.add_argument("--final-returns-csv", type=Path,
+                        default=FINAL_RETURNS_CSV)
+    parser.add_argument("--final-decomposition-csv", type=Path,
+                        default=FINAL_DECOMPOSITION_CSV)
+    parser.add_argument("--empirical-volatility-csv", type=Path,
+                        default=VOLATILITY_CSV)
+    parser.add_argument("--empirical-entropy-csv", type=Path,
+                        default=LAYER_ENTROPY_CSV)
+    parser.add_argument("--k", type=int, default=DEFAULT_K)
+    parser.set_defaults(handler=_handle_monte_carlo_comparisons)
+
+
 def _add_plot(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser("plot", help="Create plot artifacts.")
     plot_subparsers = parser.add_subparsers(dest="plot_command")
 
-    eda = plot_subparsers.add_parser("eda", help="Create return EDA plots.")
-    _add_return_inputs(eda)
-    eda.add_argument("--output-dir", type=Path, default=EDA_PLOTS_DIR)
-    eda.add_argument("--max-acf-lag", type=int, default=288)
-    eda.set_defaults(handler=_handle_plot_eda)
-
-    decomposition = plot_subparsers.add_parser(
-        "decomposition",
-        help="Create decomposition plots.",
-    )
-    _add_decomposition_csv_inputs(decomposition)
-    decomposition.add_argument(
-        "--output-dir", type=Path, default=DECOMPOSITION_PLOTS_DIR)
-    decomposition.add_argument("--k", type=int, default=DEFAULT_K)
-    decomposition.add_argument("--short-max-acf-lag", type=int, default=1440)
-    decomposition.add_argument("--long-max-acf-lag", type=int, default=6336)
-    decomposition.set_defaults(handler=_handle_plot_decomposition)
-
-    volatility = plot_subparsers.add_parser(
-        "volatility", help="Create volatility plots.")
-    volatility.add_argument(
-        "--volatility-csv", type=Path, default=VOLATILITY_CSV)
-    volatility.add_argument("--output-dir", type=Path,
-                            default=VOLATILITY_PLOTS_DIR)
-    volatility.add_argument("--k", type=int, default=DEFAULT_K)
-    volatility.set_defaults(handler=_handle_plot_volatility)
-
-    entropy = plot_subparsers.add_parser(
-        "entropy", help="Create entropy plots.")
-    entropy.add_argument("--layer-entropy-csv", type=Path,
-                         default=LAYER_ENTROPY_CSV)
-    entropy.add_argument("--entropy-gaps-csv", type=Path,
-                         default=ENTROPY_GAPS_CSV)
-    entropy.add_argument("--entropy-report-json",
-                         type=Path, default=ENTROPY_REPORT_JSON)
-    entropy.add_argument("--output-dir", type=Path, default=ENTROPY_PLOTS_DIR)
-    entropy.add_argument("--k", type=int, default=DEFAULT_K)
-    entropy.set_defaults(handler=_handle_plot_entropy)
-
     memo = plot_subparsers.add_parser("memo", help="Create memo figures.")
-    _add_return_inputs(memo)
+    memo.add_argument("--final-csv", type=Path, default=FINAL_RETURNS_CSV)
     memo.add_argument("--final-decomposition-csv", type=Path,
                       default=FINAL_DECOMPOSITION_CSV)
-    memo.add_argument(
-        "--shuffle-decomposition-csv",
-        type=Path,
-        default=SHUFFLE_DECOMPOSITION_CSV,
-    )
-    memo.add_argument("--volatility-csv", type=Path, default=VOLATILITY_CSV)
-    memo.add_argument("--layer-entropy-csv", type=Path,
-                      default=LAYER_ENTROPY_CSV)
+    memo.add_argument("--results-dir", type=Path,
+                      default=MONTE_CARLO_BASELINES_RESULTS_DIR)
+    memo.add_argument("--audit-csv", type=Path,
+                      default=MONTE_CARLO_BASELINE_AUDIT_CSV)
     memo.add_argument("--output-dir", type=Path, default=MEMO_PLOTS_DIR)
     memo.add_argument("--k", type=int, default=DEFAULT_K)
     memo.set_defaults(handler=_handle_plot_memo)
+
+    mc_baselines = plot_subparsers.add_parser(
+        "monte-carlo-baselines",
+        help="Create V1.1 Monte Carlo baseline envelope plots.",
+    )
+    mc_baselines.add_argument("--results-dir", type=Path,
+                              default=MONTE_CARLO_BASELINES_RESULTS_DIR)
+    mc_baselines.add_argument("--final-returns-csv", type=Path,
+                              default=FINAL_RETURNS_CSV)
+    mc_baselines.add_argument("--final-decomposition-csv", type=Path,
+                              default=FINAL_DECOMPOSITION_CSV)
+    mc_baselines.add_argument("--k", type=int, default=DEFAULT_K)
+    mc_baselines.set_defaults(handler=_handle_plot_monte_carlo_baselines)
 
     all_plots = plot_subparsers.add_parser(
         "all", help="Create all plot artifacts.")
@@ -229,29 +241,12 @@ def _add_run_all(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]
     parser.set_defaults(handler=_handle_run_all)
 
 
-def _add_return_inputs(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--final-csv", type=Path, default=FINAL_RETURNS_CSV)
-    parser.add_argument("--shuffle-csv", type=Path,
-                        default=SHUFFLE_RETURNS_CSV)
-    parser.add_argument("--gaussian-csv", type=Path,
-                        default=GAUSSIAN_RETURNS_CSV)
-
-
 def _add_decomposition_inputs(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--final-csv", type=Path, default=FINAL_RETURNS_CSV)
     parser.add_argument("--shuffle-csv", type=Path,
                         default=SHUFFLE_RETURNS_CSV)
     parser.add_argument("--gaussian-csv", type=Path,
                         default=GAUSSIAN_RETURNS_CSV)
-
-
-def _add_decomposition_csv_inputs(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--final-csv", type=Path,
-                        default=FINAL_DECOMPOSITION_CSV)
-    parser.add_argument("--shuffle-csv", type=Path,
-                        default=SHUFFLE_DECOMPOSITION_CSV)
-    parser.add_argument("--gaussian-csv", type=Path,
-                        default=GAUSSIAN_DECOMPOSITION_CSV)
 
 
 def _add_decomposition_metric_inputs(parser: argparse.ArgumentParser) -> None:
@@ -296,9 +291,12 @@ def _handle_standardize(args: argparse.Namespace) -> None:
 
 def _handle_baselines(args: argparse.Namespace) -> None:
     report = create_baselines(
-        BaselinePaths(input_csv=args.input_csv, output_dir=args.output_dir),
-        shuffle_seed=args.shuffle_seed,
-        gaussian_seed=args.gaussian_seed,
+        BaselinePaths(
+            input_csv=args.input_csv,
+            data_dir=args.data_dir,
+            results_dir=args.results_dir,
+        ),
+        k=args.k,
     )
     _print_json(report)
 
@@ -346,74 +344,54 @@ def _handle_entropy(args: argparse.Namespace) -> None:
     _print_json(report)
 
 
-def _handle_plot_eda(args: argparse.Namespace) -> None:
-    _print_paths(
-        create_eda_plots(
-            EdaPlotPaths(
-                final_csv=args.final_csv,
-                shuffle_csv=args.shuffle_csv,
-                gaussian_csv=args.gaussian_csv,
-                output_dir=args.output_dir,
-            ),
-            max_acf_lag=args.max_acf_lag,
-        )
+def _handle_monte_carlo_metrics(args: argparse.Namespace) -> None:
+    report = compute_monte_carlo_metrics(
+        MonteCarloMetricPaths(
+            audit_csv=args.audit_csv,
+            results_dir=args.results_dir,
+            runtime_log_csv=args.runtime_log_csv,
+        ),
+        k=args.k,
     )
+    _print_json(report)
 
 
-def _handle_plot_decomposition(args: argparse.Namespace) -> None:
-    _print_paths(
-        create_decomposition_plots(
-            DecompositionPlotPaths(
-                final_csv=args.final_csv,
-                shuffle_csv=args.shuffle_csv,
-                gaussian_csv=args.gaussian_csv,
-                output_dir=args.output_dir,
-            ),
-            k=args.k,
-            short_max_acf_lag=args.short_max_acf_lag,
-            long_max_acf_lag=args.long_max_acf_lag,
-        )
+def _handle_monte_carlo_comparisons(args: argparse.Namespace) -> None:
+    report = compute_monte_carlo_comparisons(
+        MonteCarloMetricPaths(
+            results_dir=args.results_dir,
+            final_returns_csv=args.final_returns_csv,
+            final_decomposition_csv=args.final_decomposition_csv,
+            empirical_volatility_csv=args.empirical_volatility_csv,
+            empirical_entropy_csv=args.empirical_entropy_csv,
+        ),
+        k=args.k,
     )
-
-
-def _handle_plot_volatility(args: argparse.Namespace) -> None:
-    _print_paths(
-        create_volatility_plots(
-            VolatilityPlotPaths(
-                volatility_csv=args.volatility_csv,
-                output_dir=args.output_dir,
-            ),
-            k=args.k,
-        )
-    )
-
-
-def _handle_plot_entropy(args: argparse.Namespace) -> None:
-    _print_paths(
-        create_entropy_plots(
-            EntropyPlotPaths(
-                layer_entropy_csv=args.layer_entropy_csv,
-                entropy_gaps_csv=args.entropy_gaps_csv,
-                entropy_report_json=args.entropy_report_json,
-                output_dir=args.output_dir,
-            ),
-            k=args.k,
-        )
-    )
+    _print_json(report)
 
 
 def _handle_plot_memo(args: argparse.Namespace) -> None:
     _print_paths(
-        create_memo_plots(
-            MemoPlotPaths(
+        create_v11_memo_plots(
+            MonteCarloBaselinePlotPaths(
+                results_dir=args.results_dir,
+                audit_csv=args.audit_csv,
                 final_returns_csv=args.final_csv,
-                shuffle_returns_csv=args.shuffle_csv,
-                gaussian_returns_csv=args.gaussian_csv,
                 final_decomposition_csv=args.final_decomposition_csv,
-                shuffle_decomposition_csv=args.shuffle_decomposition_csv,
-                volatility_csv=args.volatility_csv,
-                layer_entropy_csv=args.layer_entropy_csv,
-                output_dir=args.output_dir,
+                memo_output_dir=args.output_dir,
+            ),
+            k=args.k,
+        )
+    )
+
+
+def _handle_plot_monte_carlo_baselines(args: argparse.Namespace) -> None:
+    _print_paths(
+        create_monte_carlo_baseline_plots(
+            MonteCarloBaselinePlotPaths(
+                results_dir=args.results_dir,
+                final_returns_csv=args.final_returns_csv,
+                final_decomposition_csv=args.final_decomposition_csv,
             ),
             k=args.k,
         )

@@ -7,9 +7,9 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from multi_scale_volatility.config.columns import LOG_RETURN, PREVIOUS_TIMESTAMP_UTC, TIMESTAMP_UTC
+from multi_scale_volatility.config.names import LOG_RETURN, PREVIOUS_TIMESTAMP_UTC, TIMESTAMP_UTC
 from multi_scale_volatility.preprocessing.summary import int_key_counts
-from multi_scale_volatility.utils.json_utils import json_scalar
+from multi_scale_volatility.io import json_scalar
 
 
 def build_clean_returns(ohlc_5m: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:

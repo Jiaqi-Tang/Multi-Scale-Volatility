@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from multi_scale_volatility.scale_utils import (
+from multi_scale_volatility.components import (
     compress_component,
     component_repeat_length,
     original_lags_from_compressed_lags,

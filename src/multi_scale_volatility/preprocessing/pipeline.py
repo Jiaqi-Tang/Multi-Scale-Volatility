@@ -9,8 +9,9 @@ from multi_scale_volatility.preprocessing.paths import PreprocessingPaths
 from multi_scale_volatility.preprocessing.raw import load_raw_1m
 from multi_scale_volatility.preprocessing.resampling import build_5m_ohlc
 from multi_scale_volatility.preprocessing.returns import build_clean_returns
-from multi_scale_volatility.utils.artifact_io import write_csv
-from multi_scale_volatility.utils.json_utils import write_json
+from multi_scale_volatility.reports import PreprocessingOutputs
+from multi_scale_volatility.io import write_csv
+from multi_scale_volatility.io import write_json
 
 
 def run_preprocessing(paths: PreprocessingPaths | None = None) -> dict[str, Any]:
@@ -40,11 +41,11 @@ def run_preprocessing(paths: PreprocessingPaths | None = None) -> dict[str, Any]
     report.update(returns_report)
     write_csv(clean_returns, paths.clean_returns_csv, index=False)
 
-    report["outputs"] = {
-        "clean_1m_csv": str(paths.clean_1m_csv),
-        "ohlc_5m_csv": str(paths.ohlc_5m_csv),
-        "clean_returns_csv": str(paths.clean_returns_csv),
-        "report_json": str(paths.report_json),
-    }
+    report["outputs"] = PreprocessingOutputs(
+        clean_1m_csv=paths.clean_1m_csv,
+        ohlc_5m_csv=paths.ohlc_5m_csv,
+        clean_returns_csv=paths.clean_returns_csv,
+        report_json=paths.report_json,
+    ).as_dict()
     write_json(paths.report_json, report)
     return report

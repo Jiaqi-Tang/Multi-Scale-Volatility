@@ -10,8 +10,8 @@ import numpy as np
 import pandas as pd
 
 from multi_scale_volatility.config.bundles import SeriesBundle
-from multi_scale_volatility.config.columns import INDEX, LOG_RETURN, ORIGINAL, TIMESTAMP_UTC
-from multi_scale_volatility.config.constants import BASE_INTERVAL_MINUTES, DEFAULT_K
+from multi_scale_volatility.config.names import INDEX, LOG_RETURN, ORIGINAL, TIMESTAMP_UTC
+from multi_scale_volatility.config.names import BASE_INTERVAL_MINUTES, DEFAULT_K
 from multi_scale_volatility.config.paths import (
     DECOMPOSITION_DIR,
     DECOMPOSITION_REPORT_JSON,
@@ -27,8 +27,8 @@ from multi_scale_volatility.config.path_utils import (
     resolve_artifact_path,
 )
 from multi_scale_volatility.config.schemas import RETURN_COLUMNS
-from multi_scale_volatility.utils.artifact_io import write_csv
-from multi_scale_volatility.utils.json_utils import write_json
+from multi_scale_volatility.io import write_csv
+from multi_scale_volatility.io import write_json
 from multi_scale_volatility.utils.validation import require_finite_array, require_positive_k
 
 RECONSTRUCTION_TOLERANCE = 1e-12
