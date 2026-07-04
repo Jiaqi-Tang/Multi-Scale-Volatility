@@ -56,6 +56,8 @@ from multi_scale_volatility.plotting.monte_carlo_baselines import (
 )
 from multi_scale_volatility.plotting.rolling import (
     RollingExamplePlotPaths,
+    RollingPlotPaths,
+    create_rolling_plots,
     create_rolling_example_decomposition_plots,
 )
 from multi_scale_volatility.preprocessing import PreprocessingPaths, run_preprocessing
@@ -254,6 +256,14 @@ def _add_plot(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -
     mc_baselines.add_argument("--k", type=int, default=DEFAULT_K)
     mc_baselines.set_defaults(handler=_handle_plot_monte_carlo_baselines)
 
+    rolling = plot_subparsers.add_parser(
+        "rolling",
+        help="Create V2.1 rolling volatility and scale-composition plots.",
+    )
+    rolling.add_argument("--results-dir", type=Path, default=ROLLING_RESULTS_DIR)
+    rolling.add_argument("--output-dir", type=Path, default=ROLLING_PLOTS_DIR)
+    rolling.set_defaults(handler=_handle_plot_rolling)
+
     rolling_examples = plot_subparsers.add_parser(
         "rolling-examples",
         help="Create V2.1 example rolling decomposition plots.",
@@ -449,6 +459,17 @@ def _handle_plot_monte_carlo_baselines(args: argparse.Namespace) -> None:
                 final_decomposition_csv=args.final_decomposition_csv,
             ),
             k=args.k,
+        )
+    )
+
+
+def _handle_plot_rolling(args: argparse.Namespace) -> None:
+    _print_paths(
+        create_rolling_plots(
+            RollingPlotPaths(
+                results_dir=args.results_dir,
+                output_dir=args.output_dir,
+            )
         )
     )
 

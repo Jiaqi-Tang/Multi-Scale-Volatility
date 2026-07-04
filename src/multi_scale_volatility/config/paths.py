@@ -42,7 +42,9 @@ ENTROPY_REPORT_JSON = ENTROPY_RESULTS_DIR / "entropy_report.json"
 
 ROLLING_RESULTS_DIR = Path("results/rolling")
 ROLLING_WINDOW_METADATA_CSV = ROLLING_RESULTS_DIR / "rolling_window_metadata.csv"
+ROLLING_LAYER_VOLATILITY_CSV = ROLLING_RESULTS_DIR / "rolling_layer_volatility.csv"
 ROLLING_WINDOW_SUMMARY_CSV = ROLLING_RESULTS_DIR / "rolling_window_summary.csv"
+ROLLING_SCALE_GROUP_SUMMARY_CSV = ROLLING_RESULTS_DIR / "rolling_scale_group_summary.csv"
 ROLLING_EXAMPLE_WINDOWS_CSV = ROLLING_RESULTS_DIR / "rolling_example_windows.csv"
 ROLLING_REPORT_JSON = ROLLING_RESULTS_DIR / "rolling_report.json"
 

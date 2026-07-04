@@ -9,15 +9,27 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from multi_scale_volatility.components import component_specs
 from multi_scale_volatility.config.names import (
     BASE_INTERVAL_MINUTES,
+    COMPONENT,
+    COMPONENT_TYPE,
+    DETAIL_ENERGY_SHARE,
+    ENERGY,
+    K,
     LOG_RETURN,
+    RMS_VOLATILITY,
+    SCALE_DAYS,
+    SCALE_MINUTES,
     TIMESTAMP_UTC,
+    TOTAL_COMPONENT_ENERGY_SHARE,
 )
 from multi_scale_volatility.config.paths import (
     FINAL_RETURNS_CSV,
+    ROLLING_LAYER_VOLATILITY_CSV,
     ROLLING_REPORT_JSON,
     ROLLING_RESULTS_DIR,
+    ROLLING_SCALE_GROUP_SUMMARY_CSV,
     ROLLING_WINDOW_METADATA_CSV,
     ROLLING_WINDOW_SUMMARY_CSV,
 )
@@ -33,6 +45,12 @@ ROLLING_WINDOW_LENGTHS = (2048, 8192)
 ROLLING_STEP_SIZE = 288
 ROLLING_K = 9
 ROLLING_RANDOM_SEED = 20260624
+ROLLING_SCALE_GROUPS = {
+    "fine": ("D_01", "D_02", "D_03"),
+    "mid": ("D_04", "D_05", "D_06"),
+    "coarse": ("D_07", "D_08", "D_09"),
+}
+GROUP_SHARE_TOLERANCE = 1e-12
 
 
 @dataclass(frozen=True)
@@ -45,8 +63,16 @@ class RollingPaths:
         return self.output_dir / ROLLING_WINDOW_METADATA_CSV.name
 
     @property
+    def layer_volatility_csv(self) -> Path:
+        return self.output_dir / ROLLING_LAYER_VOLATILITY_CSV.name
+
+    @property
     def summary_csv(self) -> Path:
         return self.output_dir / ROLLING_WINDOW_SUMMARY_CSV.name
+
+    @property
+    def scale_group_summary_csv(self) -> Path:
+        return self.output_dir / ROLLING_SCALE_GROUP_SUMMARY_CSV.name
 
     @property
     def report_json(self) -> Path:
@@ -92,7 +118,10 @@ def compute_rolling_decomposition_diagnostics(
     require_finite_array(values, f"Input {LOG_RETURN} values in {paths.input_csv}")
 
     metadata_rows: list[dict[str, Any]] = []
+    layer_rows: list[dict[str, Any]] = []
     summary_rows: list[dict[str, Any]] = []
+    group_rows: list[dict[str, Any]] = []
+    specs = component_specs(k, include_original=False, base_interval_minutes=BASE_INTERVAL_MINUTES)
     for window_length in window_lengths:
         for spec in rolling_window_specs(len(values), window_length, step_size):
             window_values = values[spec.start_index : spec.end_index + 1]
@@ -130,17 +159,38 @@ def compute_rolling_decomposition_diagnostics(
                     ],
                 }
             )
+            layer_rows.extend(
+                rolling_layer_volatility_rows(
+                    spec,
+                    timestamps[spec.end_index],
+                    diagnostics,
+                    specs=specs,
+                )
+            )
+            group_rows.extend(
+                rolling_scale_group_rows(
+                    spec,
+                    timestamps[spec.end_index],
+                    diagnostics,
+                )
+            )
 
     metadata = pd.DataFrame(metadata_rows)
+    layer_volatility = pd.DataFrame(layer_rows)
     summary = pd.DataFrame(summary_rows)
+    scale_group_summary = pd.DataFrame(group_rows)
     paths.output_dir.mkdir(parents=True, exist_ok=True)
     write_csv(metadata, paths.metadata_csv, index=False)
+    write_csv(layer_volatility, paths.layer_volatility_csv, index=False)
     write_csv(summary, paths.summary_csv, index=False)
+    write_csv(scale_group_summary, paths.scale_group_summary_csv, index=False)
 
     report = {
         "input_csv": str(paths.input_csv),
         "metadata_csv": str(paths.metadata_csv),
+        "layer_volatility_csv": str(paths.layer_volatility_csv),
         "summary_csv": str(paths.summary_csv),
+        "scale_group_summary_csv": str(paths.scale_group_summary_csv),
         "N": int(len(values)),
         "base_interval_minutes": BASE_INTERVAL_MINUTES,
         "window_lengths": list(window_lengths),
@@ -159,6 +209,11 @@ def compute_rolling_decomposition_diagnostics(
         ),
         "max_energy_reconstruction_gap_abs": float(
             summary["energy_reconstruction_gap"].abs().max()
+        ),
+        "max_group_detail_energy_share_sum_gap_abs": float(
+            scale_group_summary.groupby(["window_length", "window_id"])[
+                "group_detail_energy_share"
+            ].sum().sub(1.0).abs().max()
         ),
     }
     write_json(paths.report_json, report)
@@ -205,6 +260,13 @@ def decompose_window_values(values: np.ndarray, k: int = ROLLING_K) -> dict[str,
     return {
         "details": details,
         "approximation": approximation,
+        "component_energies": {
+            **{
+                f"D_{scale:02d}": float(np.dot(detail, detail))
+                for scale, detail in enumerate(details, start=1)
+            },
+            f"A_{k:02d}": approximation_energy,
+        },
         "original_energy": original_energy,
         "original_rms_volatility": float(np.sqrt(original_energy / len(values))),
         "detail_energy_total": detail_energy_total,
@@ -214,6 +276,72 @@ def decompose_window_values(values: np.ndarray, k: int = ROLLING_K) -> dict[str,
         "max_abs_reconstruction_error": max_abs_error,
         "mean_abs_reconstruction_error": mean_abs_error,
     }
+
+
+def rolling_layer_volatility_rows(
+    spec: RollingWindowSpec,
+    window_end_timestamp_utc: str,
+    diagnostics: dict[str, Any],
+    specs: list[Any],
+) -> list[dict[str, Any]]:
+    component_energies = diagnostics["component_energies"]
+    detail_energy_total = diagnostics["detail_energy_total"]
+    total_component_energy = diagnostics["total_component_energy"]
+    rows: list[dict[str, Any]] = []
+    for component_spec in specs:
+        component = component_spec.name
+        energy = float(component_energies[component])
+        detail_share = np.nan
+        if component_spec.kind == "detail":
+            detail_share = energy / detail_energy_total
+        rows.append(
+            {
+                "window_length": spec.window_length,
+                "window_id": spec.window_id,
+                "window_end_timestamp_utc": window_end_timestamp_utc,
+                COMPONENT: component,
+                K: component_spec.scale,
+                COMPONENT_TYPE: component_spec.kind,
+                SCALE_MINUTES: component_spec.scale_minutes,
+                SCALE_DAYS: component_spec.scale_days,
+                ENERGY: energy,
+                RMS_VOLATILITY: float(np.sqrt(energy / spec.window_length)),
+                DETAIL_ENERGY_SHARE: detail_share,
+                TOTAL_COMPONENT_ENERGY_SHARE: energy / total_component_energy,
+            }
+        )
+    return rows
+
+
+def rolling_scale_group_rows(
+    spec: RollingWindowSpec,
+    window_end_timestamp_utc: str,
+    diagnostics: dict[str, Any],
+) -> list[dict[str, Any]]:
+    component_energies = diagnostics["component_energies"]
+    detail_energy_total = diagnostics["detail_energy_total"]
+    rows: list[dict[str, Any]] = []
+    for group_name, components in ROLLING_SCALE_GROUPS.items():
+        group_energy = float(sum(component_energies[component] for component in components))
+        rows.append(
+            {
+                "window_length": spec.window_length,
+                "window_id": spec.window_id,
+                "window_end_timestamp_utc": window_end_timestamp_utc,
+                "scale_group": group_name,
+                "component_start": components[0],
+                "component_end": components[-1],
+                "group_energy": group_energy,
+                "group_detail_energy_share": group_energy / detail_energy_total,
+            }
+        )
+    group_share_sum = sum(row["group_detail_energy_share"] for row in rows)
+    if abs(group_share_sum - 1.0) > GROUP_SHARE_TOLERANCE:
+        raise ValueError(
+            f"Scale group shares sum to {group_share_sum} for "
+            f"W={spec.window_length}, window_id={spec.window_id}"
+        )
+    return rows
 
 
 def decompose_rolling_window_from_input(
