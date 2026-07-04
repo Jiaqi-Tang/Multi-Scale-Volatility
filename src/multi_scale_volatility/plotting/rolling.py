@@ -20,7 +20,7 @@ from multi_scale_volatility.config.paths import (
     FINAL_RETURNS_CSV,
     ROLLING_EXAMPLE_WINDOWS_CSV,
     ROLLING_LAYER_VOLATILITY_CSV,
-    ROLLING_PLOTS_DIR,
+    ROLLING_WINDOWS_PLOTS_DIR,
     ROLLING_RESULTS_DIR,
     ROLLING_SCALE_GROUP_SUMMARY_CSV,
     ROLLING_WINDOW_METADATA_CSV,
@@ -46,7 +46,7 @@ from multi_scale_volatility.rolling import (
 @dataclass(frozen=True)
 class RollingPlotPaths:
     results_dir: Path = ROLLING_RESULTS_DIR
-    output_dir: Path = ROLLING_PLOTS_DIR
+    output_dir: Path = ROLLING_WINDOWS_PLOTS_DIR
 
     @property
     def summary_csv(self) -> Path:
@@ -65,7 +65,7 @@ class RollingPlotPaths:
 class RollingExamplePlotPaths:
     final_returns_csv: Path = FINAL_RETURNS_CSV
     results_dir: Path = ROLLING_RESULTS_DIR
-    output_dir: Path = ROLLING_PLOTS_DIR / "examples"
+    output_dir: Path = ROLLING_WINDOWS_PLOTS_DIR / "examples"
 
     @property
     def metadata_csv(self) -> Path:
@@ -231,6 +231,7 @@ def create_rolling_plots(paths: RollingPlotPaths | None = None) -> list[Path]:
         )
         outputs.append(
             plot_scale_group_share_correlation(
+                summary,
                 groups,
                 energy_share_dir / f"fine_mid_coarse_share_correlation_{window_length}.png",
                 window_length=window_length,
@@ -608,27 +609,37 @@ def plot_scale_group_shares(
 
 
 def plot_scale_group_share_correlation(
+    summary: pd.DataFrame,
     groups: pd.DataFrame,
     output_path: Path,
     window_length: int,
 ) -> Path:
-    group_order = ["fine", "mid", "coarse"]
+    variable_order = ["total_rms", "fine", "mid", "coarse"]
     rows = groups[groups["window_length"] == window_length].copy()
-    wide = (
+    group_wide = (
         rows.pivot(
             index="window_id",
             columns="scale_group",
             values="group_detail_energy_share",
         )
-        .reindex(columns=group_order)
+        .reindex(columns=["fine", "mid", "coarse"])
         .sort_index()
     )
-    correlation = wide.corr().reindex(index=group_order, columns=group_order)
+    total_rms = (
+        summary[summary["window_length"] == window_length]
+        .set_index("window_id")["original_rms_volatility"]
+        .rename("total_rms")
+    )
+    wide = group_wide.join(total_rms, how="inner").reindex(columns=variable_order)
+    correlation = wide.corr().reindex(index=variable_order, columns=variable_order)
     return plot_correlation_matrix(
         correlation,
         output_path,
-        labels=group_order,
-        title=f"Correlation of Fine / Mid / Coarse Energy Shares (W={window_length})",
+        labels=variable_order,
+        title=(
+            "Correlation of Total RMS and Fine / Mid / Coarse Energy Shares "
+            f"(W={window_length})"
+        ),
     )
 
 

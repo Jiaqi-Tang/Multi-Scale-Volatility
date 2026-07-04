@@ -974,6 +974,179 @@ Entropy is currently the slowest Monte Carlo metric stage.
 
 ---
 
+# Rolling Window Diagnostics
+
+Objective: inspect time-local multi-scale volatility structure using fixed-size
+rolling windows over the standardized return series $R^{\ast}$.
+
+## Design choices
+
+Rolling windows are defined on observation index, not calendar time.
+
+For window length $W$ and step size $S$:
+
+$$
+\mathcal{W}_{q,W} = \{r_q^{\ast}, r_{q+1}^{\ast}, \ldots, r_{q+W-1}^{\ast}\}
+$$
+
+with:
+
+```text
+W in {2048, 8192}
+S = 288
+K_roll = 9
+```
+
+The current exact window counts are:
+
+```text
+W=2048: 2546 windows
+W=8192: 2525 windows
+```
+
+Each rolling window is decomposed locally:
+
+$$
+\mathcal{W}_{q,W} = A_9^{(q,W)} + \sum_{k=1}^{9}D_k^{(q,W)}
+$$
+
+The reconstruction check requires:
+
+$$
+\max_i |w_i - \hat{w}_i| \leq 10^{-12}
+$$
+
+where:
+
+$$
+\hat{w} = A_9^{(q,W)} + \sum_{k=1}^{9}D_k^{(q,W)}
+$$
+
+## Rolling metrics
+
+For each window and component, V2.1 computes RMS volatility:
+
+$$
+\sigma_{c,q,W}^{RMS} = \sqrt{\frac{1}{W}\sum_{i=1}^{W}x_{c,i}^{2}}
+$$
+
+for:
+
+$$
+c \in \{D_1,\ldots,D_9,A_9\}
+$$
+
+Detail energy share is computed over detail components only:
+
+$$
+p_{k,q,W}^{detail} =
+\frac{E(D_k^{(q,W)})}{\sum_{j=1}^{9}E(D_j^{(q,W)})}
+$$
+
+Total component energy share includes the approximation component:
+
+$$
+p_{c,q,W}^{total} =
+\frac{E(c^{(q,W)})}{\sum_{j=1}^{9}E(D_j^{(q,W)})+E(A_9^{(q,W)})}
+$$
+
+The detail scales are also summarized into three groups:
+
+```text
+fine:   D_1, D_2, D_3
+mid:    D_4, D_5, D_6
+coarse: D_7, D_8, D_9
+```
+
+For each window:
+
+$$
+p_{fine,q,W} + p_{mid,q,W} + p_{coarse,q,W} = 1
+$$
+
+up to floating-point tolerance.
+
+## Outputs
+
+Rolling outputs are saved under `results/rolling`:
+
+```text
+rolling_window_metadata.csv
+rolling_layer_volatility.csv
+rolling_window_summary.csv
+rolling_scale_group_summary.csv
+rolling_example_windows.csv
+rolling_report.json
+```
+
+---
+
+# Rolling Baseline Correlation Envelopes
+
+Objective: compare empirical rolling cross-component correlation structure
+against the existing shuffled and Gaussian Monte Carlo baselines.
+
+For each baseline simulation, V2.1 reuses the baseline return parquet files and
+applies the same rolling windows, local decomposition depth, and rolling metrics
+as the empirical series.
+
+For each baseline type, simulation, and window length, two correlation matrices
+are computed.
+
+The first uses rolling RMS volatility:
+
+$$
+\rho_{c,d,W}^{RMS,m} =
+\mathrm{Corr}\left(\sigma_{c,\cdot,W}^{RMS,m},
+\sigma_{d,\cdot,W}^{RMS,m}\right)
+$$
+
+The second uses percentile-ranked rolling detail energy shares. For each detail
+component, percentile ranks are computed within the same window length:
+
+$$
+u_{k,q,W} =
+\frac{1}{Q_W}\sum_{q'=1}^{Q_W}\mathbf{1}\{p_{k,q',W}^{detail} \leq p_{k,q,W}^{detail}\}
+$$
+
+Then:
+
+$$
+\rho_{k,l,W}^{share,pct,m} =
+\mathrm{Corr}(u_{k,\cdot,W}^{m},u_{l,\cdot,W}^{m})
+$$
+
+For each baseline type and component pair, V2.1 records:
+
+```text
+median
+p05
+p95
+inside_envelope
+above_envelope
+below_envelope
+outside_envelope
+```
+
+These are Monte Carlo envelopes for rolling correlation structure, not formal
+hypothesis tests.
+
+Rolling baseline outputs are saved under `results/rolling_baselines`:
+
+```text
+rolling_correlation_simulations.csv
+rolling_correlation_summary.csv
+rolling_correlation_empirical_comparison.csv
+runtime_log.csv
+rolling_baseline_report.json
+```
+
+The runtime log records per-simulation stages so that window generation,
+decomposition, metric calculation, and correlation calculation bottlenecks can
+be inspected after a full run.
+
+---
+
 # Plot Reference
 
 All return-series plots use observation index rather than timestamp on the
@@ -986,7 +1159,7 @@ version.
 Folder:
 
 ```text
-plots/eda/returns
+plots/results/data_eda/returns
 ```
 
 **Return line plots**
@@ -1114,7 +1287,7 @@ Monte Carlo baseline medians with 5-95% envelopes.
 Folder:
 
 ```text
-plots/eda/decomposition
+plots/results/data_eda/decomposition
 ```
 
 Let:
@@ -1236,6 +1409,12 @@ Gaussian Monte Carlo baseline medians with 5-95% envelopes.
 
 **Absolute component correlation heatmaps**
 
+Folder:
+
+```text
+plots/results/global_data/correlation
+```
+
 ```text
 abs_corr_empirical.png
 abs_corr_empirical_minus_shuffle_median.png
@@ -1272,7 +1451,7 @@ baseline 5-95% envelope.
 Folder:
 
 ```text
-plots/results/volatility
+plots/results/global_data/volatility
 ```
 
 All volatility plots use categorical component x-axis.
@@ -1371,7 +1550,7 @@ $$
 Folder:
 
 ```text
-plots/results/entropy
+plots/results/global_data/entropy
 ```
 
 All entropy plots use categorical component x-axis.
@@ -1462,6 +1641,116 @@ The dashed reference line is the uniform share:
 $$
 \frac{1}{6}
 $$
+
+## Rolling Window Plots
+
+Folder:
+
+```text
+plots/results/rolling_windows
+```
+
+Rolling plots use rolling window index on the x-axis. Window metadata in
+`results/rolling/rolling_window_metadata.csv` can be used to map a window back
+to its start and end timestamps.
+
+**Total volatility plots**
+
+```text
+rolling_total_volatility_2048.png
+rolling_total_volatility_8192.png
+window_length_total_volatility_comparison.png
+```
+
+These plots show the rolling RMS volatility of the original window:
+
+$$
+\sigma_{q,W}^{RMS} = \sqrt{\frac{1}{W}\sum_{i=1}^{W}w_{q,i}^{2}}
+$$
+
+**Rolling RMS plots**
+
+Folder:
+
+```text
+plots/results/rolling_windows/rms
+```
+
+```text
+rms_volatility_heatmap_2048.png
+rms_volatility_heatmap_8192.png
+rms_volatility_percentile_heatmap_2048.png
+rms_volatility_percentile_heatmap_8192.png
+rms_volatility_zscore_heatmap_2048.png
+rms_volatility_zscore_heatmap_8192.png
+rms_volatility_correlation_2048.png
+rms_volatility_correlation_8192.png
+rms_volatility_percentile_correlation_2048.png
+rms_volatility_percentile_correlation_8192.png
+rms_volatility_zscore_correlation_2048.png
+rms_volatility_zscore_correlation_8192.png
+selected_scale_rms_2048.png
+selected_scale_rms_8192.png
+```
+
+Percentile and z-score heatmaps are computed within each window length and
+component. They are EDA views of relative rolling intensity, not replacements
+for the raw RMS heatmaps.
+
+**Rolling energy-share plots**
+
+Folder:
+
+```text
+plots/results/rolling_windows/energy_share
+```
+
+```text
+detail_energy_share_heatmap_2048.png
+detail_energy_share_heatmap_8192.png
+detail_energy_share_percentile_heatmap_2048.png
+detail_energy_share_percentile_heatmap_8192.png
+detail_energy_share_percentile_correlation_2048.png
+detail_energy_share_percentile_correlation_8192.png
+fine_mid_coarse_share_2048.png
+fine_mid_coarse_share_8192.png
+fine_mid_coarse_share_correlation_2048.png
+fine_mid_coarse_share_correlation_8192.png
+window_length_fine_share_comparison.png
+window_length_mid_share_comparison.png
+window_length_coarse_share_comparison.png
+```
+
+The fine/mid/coarse correlation heatmaps include total window RMS alongside the
+three group shares:
+
+$$
+\{\sigma_{q,W}^{RMS}, p_{fine,q,W}, p_{mid,q,W}, p_{coarse,q,W}\}
+$$
+
+**Rolling example decompositions**
+
+Folder:
+
+```text
+plots/results/rolling_windows/examples
+```
+
+Example plots show all rolling decomposition scales for selected windows,
+including first, last, maximum-volatility, minimum-volatility, median-volatility,
+and random EDA windows.
+
+**Rolling baseline comparison plots**
+
+Folder:
+
+```text
+plots/results/rolling_windows/baselines
+```
+
+The `rms` and `energy_share` subfolders contain empirical rolling correlation
+matrices, shuffled and Gaussian baseline medians, empirical-minus-median
+matrices, and outside-envelope indicators for the rolling baseline comparisons.
 
 ## Memo Plots
 

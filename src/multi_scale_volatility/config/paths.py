@@ -48,6 +48,19 @@ ROLLING_SCALE_GROUP_SUMMARY_CSV = ROLLING_RESULTS_DIR / "rolling_scale_group_sum
 ROLLING_EXAMPLE_WINDOWS_CSV = ROLLING_RESULTS_DIR / "rolling_example_windows.csv"
 ROLLING_REPORT_JSON = ROLLING_RESULTS_DIR / "rolling_report.json"
 
+ROLLING_BASELINE_RESULTS_DIR = Path("results/rolling_baselines")
+ROLLING_BASELINE_CORRELATION_SIMULATIONS_CSV = (
+    ROLLING_BASELINE_RESULTS_DIR / "rolling_correlation_simulations.csv"
+)
+ROLLING_BASELINE_CORRELATION_SUMMARY_CSV = (
+    ROLLING_BASELINE_RESULTS_DIR / "rolling_correlation_summary.csv"
+)
+ROLLING_BASELINE_CORRELATION_EMPIRICAL_COMPARISON_CSV = (
+    ROLLING_BASELINE_RESULTS_DIR / "rolling_correlation_empirical_comparison.csv"
+)
+ROLLING_BASELINE_RUNTIME_LOG_CSV = ROLLING_BASELINE_RESULTS_DIR / "runtime_log.csv"
+ROLLING_BASELINE_REPORT_JSON = ROLLING_BASELINE_RESULTS_DIR / "rolling_baseline_report.json"
+
 MONTE_CARLO_BASELINES_RESULTS_DIR = Path("results/monte_carlo_baselines")
 MONTE_CARLO_BASELINE_CONFIG_JSON = (
     MONTE_CARLO_BASELINES_RESULTS_DIR / "monte_carlo_config.json"
@@ -101,9 +114,11 @@ MC_ABS_COMPONENT_CORRELATION_EMPIRICAL_COMPARISON_CSV = (
     / "abs_component_correlation_empirical_comparison.csv"
 )
 
-EDA_PLOTS_DIR = Path("plots/eda/returns")
-DECOMPOSITION_PLOTS_DIR = Path("plots/eda/decomposition")
-VOLATILITY_PLOTS_DIR = Path("plots/results/volatility")
-ENTROPY_PLOTS_DIR = Path("plots/results/entropy")
 MEMO_PLOTS_DIR = Path("plots/memo")
-ROLLING_PLOTS_DIR = Path("plots/rolling")
+DATA_EDA_RETURNS_PLOTS_DIR = Path("plots/results/data_eda/returns")
+DATA_EDA_DECOMPOSITION_PLOTS_DIR = Path("plots/results/data_eda/decomposition")
+GLOBAL_VOLATILITY_PLOTS_DIR = Path("plots/results/global_data/volatility")
+GLOBAL_ENTROPY_PLOTS_DIR = Path("plots/results/global_data/entropy")
+GLOBAL_CORRELATION_PLOTS_DIR = Path("plots/results/global_data/correlation")
+ROLLING_WINDOWS_PLOTS_DIR = Path("plots/results/rolling_windows")
+ROLLING_BASELINE_PLOTS_DIR = ROLLING_WINDOWS_PLOTS_DIR / "baselines"
