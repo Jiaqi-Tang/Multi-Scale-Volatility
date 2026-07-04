@@ -34,6 +34,9 @@ from multi_scale_volatility.config.paths import (
     MONTE_CARLO_BASELINES_DATA_DIR,
     MONTE_CARLO_BASELINES_RESULTS_DIR,
     RAW_METATRADER_DIR,
+    ROLLING_BASELINE_RESULTS_DIR,
+    ROLLING_BASELINE_RUNTIME_LOG_CSV,
+    ROLLING_BASELINE_PLOTS_DIR,
     ROLLING_WINDOWS_PLOTS_DIR,
     ROLLING_RESULTS_DIR,
     SHUFFLE_DECOMPOSITION_CSV,
@@ -60,6 +63,10 @@ from multi_scale_volatility.plotting.rolling import (
     create_rolling_plots,
     create_rolling_example_decomposition_plots,
 )
+from multi_scale_volatility.plotting.rolling_baselines import (
+    RollingBaselinePlotPaths,
+    create_rolling_baseline_plots,
+)
 from multi_scale_volatility.preprocessing import PreprocessingPaths, run_preprocessing
 from multi_scale_volatility.runtime import configure_logging
 from multi_scale_volatility.rolling import (
@@ -68,6 +75,10 @@ from multi_scale_volatility.rolling import (
     ROLLING_WINDOW_LENGTHS,
     RollingPaths,
     compute_rolling_decomposition_diagnostics,
+)
+from multi_scale_volatility.rolling_baselines import (
+    RollingBaselineCorrelationPaths,
+    compute_rolling_baseline_correlations,
 )
 from multi_scale_volatility.volatility import VolatilityPaths, compute_volatility_metrics
 
@@ -100,6 +111,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_monte_carlo_metrics(subparsers)
     _add_monte_carlo_comparisons(subparsers)
     _add_rolling(subparsers)
+    _add_rolling_baselines(subparsers)
     _add_plot(subparsers)
     _add_run_all(subparsers)
 
@@ -227,6 +239,33 @@ def _add_rolling(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]
     parser.set_defaults(handler=_handle_rolling)
 
 
+def _add_rolling_baselines(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    parser = subparsers.add_parser(
+        "rolling-baselines",
+        help="Create rolling correlation envelopes for Monte Carlo baselines.",
+    )
+    parser.add_argument("--audit-csv", type=Path, default=MONTE_CARLO_BASELINE_AUDIT_CSV)
+    parser.add_argument(
+        "--empirical-layer-volatility-csv",
+        type=Path,
+        default=ROLLING_RESULTS_DIR / "rolling_layer_volatility.csv",
+    )
+    parser.add_argument("--output-dir", type=Path, default=ROLLING_BASELINE_RESULTS_DIR)
+    parser.add_argument(
+        "--runtime-log-csv",
+        type=Path,
+        default=ROLLING_BASELINE_RUNTIME_LOG_CSV,
+    )
+    parser.add_argument("--window-lengths", type=int, nargs="+", default=list(ROLLING_WINDOW_LENGTHS))
+    parser.add_argument("--step-size", type=int, default=ROLLING_STEP_SIZE)
+    parser.add_argument("--k", type=int, default=ROLLING_K)
+    parser.add_argument("--max-workers", type=int, default=None)
+    parser.add_argument("--max-simulations-per-type", type=int, default=None)
+    parser.set_defaults(handler=_handle_rolling_baselines)
+
+
 def _add_plot(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser("plot", help="Create plot artifacts.")
     plot_subparsers = parser.add_subparsers(dest="plot_command")
@@ -278,6 +317,22 @@ def _add_plot(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -
     rolling_examples.add_argument("--k", type=int, default=ROLLING_K)
     rolling_examples.add_argument("--step-size", type=int, default=ROLLING_STEP_SIZE)
     rolling_examples.set_defaults(handler=_handle_plot_rolling_examples)
+
+    rolling_baselines = plot_subparsers.add_parser(
+        "rolling-baselines",
+        help="Create rolling baseline correlation envelope plots.",
+    )
+    rolling_baselines.add_argument(
+        "--results-dir",
+        type=Path,
+        default=ROLLING_BASELINE_RESULTS_DIR,
+    )
+    rolling_baselines.add_argument(
+        "--output-dir",
+        type=Path,
+        default=ROLLING_BASELINE_PLOTS_DIR,
+    )
+    rolling_baselines.set_defaults(handler=_handle_plot_rolling_baselines)
 
     all_plots = plot_subparsers.add_parser(
         "all", help="Create all plot artifacts.")
@@ -435,6 +490,23 @@ def _handle_rolling(args: argparse.Namespace) -> None:
     _print_json(report)
 
 
+def _handle_rolling_baselines(args: argparse.Namespace) -> None:
+    report = compute_rolling_baseline_correlations(
+        RollingBaselineCorrelationPaths(
+            audit_csv=args.audit_csv,
+            empirical_layer_volatility_csv=args.empirical_layer_volatility_csv,
+            output_dir=args.output_dir,
+            runtime_log_csv=args.runtime_log_csv,
+        ),
+        window_lengths=tuple(args.window_lengths),
+        step_size=args.step_size,
+        k=args.k,
+        max_workers=args.max_workers,
+        max_simulations_per_type=args.max_simulations_per_type,
+    )
+    _print_json(report)
+
+
 def _handle_plot_memo(args: argparse.Namespace) -> None:
     _print_paths(
         create_v11_memo_plots(
@@ -484,6 +556,17 @@ def _handle_plot_rolling_examples(args: argparse.Namespace) -> None:
             ),
             k=args.k,
             step_size=args.step_size,
+        )
+    )
+
+
+def _handle_plot_rolling_baselines(args: argparse.Namespace) -> None:
+    _print_paths(
+        create_rolling_baseline_plots(
+            RollingBaselinePlotPaths(
+                results_dir=args.results_dir,
+                output_dir=args.output_dir,
+            )
         )
     )
 
