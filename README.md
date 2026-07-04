@@ -1,11 +1,12 @@
 # Multi-Scale Volatility Structure in EUR/USD Returns
 
-Current version: **V1.1**. Extensions and optimizations ongoing.
+Current version: **V2.1**. The V1.1 global Monte Carlo baseline pipeline is retained.
 
-V1.1 keeps the original pipeline and replaces the old single-draw baselines with Monte Carlo baseline envelopes.
+V2.1 adds fixed-observation rolling diagnostics and rolling baseline correlation
+envelopes on top of the V1.1 global analysis.
 
 - `Memo.md` - concise research summary and findings
-- `Documentation.md` - exact preprocessing, decomposition, metric, and baseline-envelope definitions
+- `Documentation.md` - exact preprocessing, decomposition, metric, rolling, and baseline-envelope definitions
 - `README.md` - project overview and reproduction guide
 - `plots/` and `results/` - generated figures, metric tables, and comparisons
 
@@ -23,9 +24,10 @@ The analysis compares real EUR/USD returns against two reference processes:
 The primary goal is to identify whether real FX volatility exhibits
 scale-dependent structure beyond heavy tails or independent noise alone.
 
-This project is intentionally a minimalist first-stage exploration. It does not
-include forecasting, rolling windows, regime classification, event studies, or
-optimization-heavy methods.
+The global V1.1 analysis is a minimalist full-sample exploration. V2.1 adds
+rolling windows to inspect time-local volatility structure. The project still
+does not include forecasting, regime classification, event studies, or trading
+rules.
 
 ## Key Findings
 
@@ -34,6 +36,8 @@ optimization-heavy methods.
 - Intermediate decomposition scales show relative energy deficits.
 - Volatility states exhibit persistent cross-scale coupling beyond what is
   explained by the shuffled baseline envelope.
+- Rolling windows expose time-local shifts in fine, mid, and coarse volatility
+  share structure.
 - Absolute-return autocorrelation confirms strong volatility clustering.
 - Permutation entropy differences remain comparatively weak under the current
   specification.
@@ -46,7 +50,7 @@ optimization-heavy methods.
 
 ![Cross Scale Correlation](plots/memo/figure_05_cross_scale_correlation.png)
 
-## Reproduce the V1.1 Pipeline
+## Reproduce the Pipeline
 
 Ensure that Python 3.13 is installed.
 
@@ -56,7 +60,7 @@ Install dependencies:
 pip install -e .
 ```
 
-Run the full V1.1 pipeline (runtime around `14min`):
+Run the full V1.1 global pipeline (runtime around `14min`):
 
 ```powershell
 ve run-all
@@ -78,6 +82,21 @@ ve baselines
 ve monte-carlo-metrics
 ve monte-carlo-comparisons
 ve plot memo
+```
+
+Run the V2.1 rolling diagnostics:
+
+```powershell
+ve rolling
+ve plot rolling
+ve plot rolling-examples
+```
+
+Run rolling baseline correlation envelopes:
+
+```powershell
+ve rolling-baselines
+ve plot rolling-baselines
 ```
 
 ## Repository Structure
@@ -104,6 +123,8 @@ results/
   volatility/
   entropy/
   monte_carlo_baselines/
+  rolling/
+  rolling_baselines/
 
 plots/
   memo/
@@ -111,6 +132,10 @@ plots/
     data_eda/
     global_data/
     rolling_windows/
+      rms/
+      energy_share/
+      examples/
+      baselines/
 
 Documentation.md
 Memo.md
@@ -119,18 +144,22 @@ README.md
 
 ## Current Status
 
-V1.1 complete:
+V2.1 complete:
 
 - preprocessing pipeline,
 - dyadic decomposition,
 - Monte Carlo baseline construction,
 - volatility diagnostics,
 - entropy diagnostics,
-- cross-scale correlation analysis.
+- cross-scale correlation analysis,
+- fixed-observation rolling decompositions,
+- rolling RMS and energy-share diagnostics,
+- rolling baseline correlation-envelope comparisons.
 
 Currently exploring:
 
-- time-local volatility propagation,
 - event-transition analysis,
+- possible V3 extensions.
 
-Known runtime note: entropy is the slowest Monte Carlo metric stage.
+Known runtime notes: entropy is the slowest global Monte Carlo metric stage; the
+rolling baseline run is dominated by rolling metric computation for $W=8192$.
