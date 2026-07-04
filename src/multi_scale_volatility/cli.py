@@ -34,7 +34,7 @@ from multi_scale_volatility.config.paths import (
     MONTE_CARLO_BASELINES_DATA_DIR,
     MONTE_CARLO_BASELINES_RESULTS_DIR,
     RAW_METATRADER_DIR,
-    ROLLING_PLOTS_DIR,
+    ROLLING_WINDOWS_PLOTS_DIR,
     ROLLING_RESULTS_DIR,
     SHUFFLE_DECOMPOSITION_CSV,
     SHUFFLE_RETURNS_CSV,
@@ -49,7 +49,7 @@ from multi_scale_volatility.monte_carlo_metrics import (
     compute_monte_carlo_metrics,
 )
 from multi_scale_volatility.pipeline import PipelineOptions, run_all, run_core_pipeline, run_plot_pipeline
-from multi_scale_volatility.plotting.monte_carlo_baselines import (
+from multi_scale_volatility.plotting.global_results import (
     MonteCarloBaselinePlotPaths,
     create_monte_carlo_baseline_plots,
     create_v11_memo_plots,
@@ -261,7 +261,7 @@ def _add_plot(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -
         help="Create V2.1 rolling volatility and scale-composition plots.",
     )
     rolling.add_argument("--results-dir", type=Path, default=ROLLING_RESULTS_DIR)
-    rolling.add_argument("--output-dir", type=Path, default=ROLLING_PLOTS_DIR)
+    rolling.add_argument("--output-dir", type=Path, default=ROLLING_WINDOWS_PLOTS_DIR)
     rolling.set_defaults(handler=_handle_plot_rolling)
 
     rolling_examples = plot_subparsers.add_parser(
@@ -273,7 +273,7 @@ def _add_plot(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -
     rolling_examples.add_argument(
         "--output-dir",
         type=Path,
-        default=ROLLING_PLOTS_DIR / "examples",
+        default=ROLLING_WINDOWS_PLOTS_DIR / "examples",
     )
     rolling_examples.add_argument("--k", type=int, default=ROLLING_K)
     rolling_examples.add_argument("--step-size", type=int, default=ROLLING_STEP_SIZE)

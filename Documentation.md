@@ -986,7 +986,7 @@ version.
 Folder:
 
 ```text
-plots/eda/returns
+plots/results/data_eda/returns
 ```
 
 **Return line plots**
@@ -1114,7 +1114,7 @@ Monte Carlo baseline medians with 5-95% envelopes.
 Folder:
 
 ```text
-plots/eda/decomposition
+plots/results/data_eda/decomposition
 ```
 
 Let:
@@ -1236,6 +1236,12 @@ Gaussian Monte Carlo baseline medians with 5-95% envelopes.
 
 **Absolute component correlation heatmaps**
 
+Folder:
+
+```text
+plots/results/global_data/correlation
+```
+
 ```text
 abs_corr_empirical.png
 abs_corr_empirical_minus_shuffle_median.png
@@ -1272,7 +1278,7 @@ baseline 5-95% envelope.
 Folder:
 
 ```text
-plots/results/volatility
+plots/results/global_data/volatility
 ```
 
 All volatility plots use categorical component x-axis.
@@ -1371,7 +1377,7 @@ $$
 Folder:
 
 ```text
-plots/results/entropy
+plots/results/global_data/entropy
 ```
 
 All entropy plots use categorical component x-axis.

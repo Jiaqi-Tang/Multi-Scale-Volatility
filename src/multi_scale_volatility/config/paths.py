@@ -101,9 +101,10 @@ MC_ABS_COMPONENT_CORRELATION_EMPIRICAL_COMPARISON_CSV = (
     / "abs_component_correlation_empirical_comparison.csv"
 )
 
-EDA_PLOTS_DIR = Path("plots/eda/returns")
-DECOMPOSITION_PLOTS_DIR = Path("plots/eda/decomposition")
-VOLATILITY_PLOTS_DIR = Path("plots/results/volatility")
-ENTROPY_PLOTS_DIR = Path("plots/results/entropy")
 MEMO_PLOTS_DIR = Path("plots/memo")
-ROLLING_PLOTS_DIR = Path("plots/rolling")
+DATA_EDA_RETURNS_PLOTS_DIR = Path("plots/results/data_eda/returns")
+DATA_EDA_DECOMPOSITION_PLOTS_DIR = Path("plots/results/data_eda/decomposition")
+GLOBAL_VOLATILITY_PLOTS_DIR = Path("plots/results/global_data/volatility")
+GLOBAL_ENTROPY_PLOTS_DIR = Path("plots/results/global_data/entropy")
+GLOBAL_CORRELATION_PLOTS_DIR = Path("plots/results/global_data/correlation")
+ROLLING_WINDOWS_PLOTS_DIR = Path("plots/results/rolling_windows")

@@ -20,7 +20,7 @@ from multi_scale_volatility.config.paths import (
     FINAL_RETURNS_CSV,
     ROLLING_EXAMPLE_WINDOWS_CSV,
     ROLLING_LAYER_VOLATILITY_CSV,
-    ROLLING_PLOTS_DIR,
+    ROLLING_WINDOWS_PLOTS_DIR,
     ROLLING_RESULTS_DIR,
     ROLLING_SCALE_GROUP_SUMMARY_CSV,
     ROLLING_WINDOW_METADATA_CSV,
@@ -46,7 +46,7 @@ from multi_scale_volatility.rolling import (
 @dataclass(frozen=True)
 class RollingPlotPaths:
     results_dir: Path = ROLLING_RESULTS_DIR
-    output_dir: Path = ROLLING_PLOTS_DIR
+    output_dir: Path = ROLLING_WINDOWS_PLOTS_DIR
 
     @property
     def summary_csv(self) -> Path:
@@ -65,7 +65,7 @@ class RollingPlotPaths:
 class RollingExamplePlotPaths:
     final_returns_csv: Path = FINAL_RETURNS_CSV
     results_dir: Path = ROLLING_RESULTS_DIR
-    output_dir: Path = ROLLING_PLOTS_DIR / "examples"
+    output_dir: Path = ROLLING_WINDOWS_PLOTS_DIR / "examples"
 
     @property
     def metadata_csv(self) -> Path:

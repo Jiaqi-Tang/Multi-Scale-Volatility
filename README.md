@@ -106,9 +106,11 @@ results/
   monte_carlo_baselines/
 
 plots/
-  eda/
-  results/
   memo/
+  results/
+    data_eda/
+    global_data/
+    rolling_windows/
 
 Documentation.md
 Memo.md
