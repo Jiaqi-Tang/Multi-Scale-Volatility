@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from concurrent.futures import ProcessPoolExecutor
-import itertools
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -52,7 +51,6 @@ ROLLING_CORRELATION_METRICS = (
     "rms_volatility_correlation",
     "detail_energy_share_percentile_correlation",
 )
-SUMMARY_QUANTILES = (0.05, 0.5, 0.95)
 RUNTIME_LOG_BATCH_SIZE = 10
 logger = get_logger(__name__)
 
@@ -147,8 +145,19 @@ def compute_rolling_baseline_correlations(
     tracker.flush()
 
     simulations = pd.DataFrame(rows)
+    write_timer = start_timer()
     write_csv(simulations, paths.simulations_csv, index=False)
+    tracker.record(
+        stage="rolling_baselines",
+        operation="write_simulation_correlations",
+        started_at_utc=write_timer.started_at_utc,
+        elapsed_seconds=write_timer.elapsed_seconds,
+        rows_in=len(simulations),
+        rows_out=len(simulations),
+        output_path=str(paths.simulations_csv),
+    )
 
+    summary_timer = start_timer()
     summary = summarize_metrics(
         simulations,
         group_cols=[
@@ -161,7 +170,17 @@ def compute_rolling_baseline_correlations(
         value_cols=["correlation"],
     )
     write_csv(summary, paths.summary_csv, index=False)
+    tracker.record(
+        stage="rolling_baselines",
+        operation="summarize_baseline_correlations",
+        started_at_utc=summary_timer.started_at_utc,
+        elapsed_seconds=summary_timer.elapsed_seconds,
+        rows_in=len(simulations),
+        rows_out=len(summary),
+        output_path=str(paths.summary_csv),
+    )
 
+    comparison_timer = start_timer()
     empirical = compute_empirical_rolling_correlation_rows(
         paths.empirical_layer_volatility_csv,
         window_lengths=window_lengths,
@@ -180,6 +199,15 @@ def compute_rolling_baseline_correlations(
     )
     comparison["outside_envelope"] = ~comparison["inside_envelope"].astype(bool)
     write_csv(comparison, paths.empirical_comparison_csv, index=False)
+    tracker.record(
+        stage="rolling_baselines",
+        operation="compare_empirical_correlations",
+        started_at_utc=comparison_timer.started_at_utc,
+        elapsed_seconds=comparison_timer.elapsed_seconds,
+        rows_in=len(summary),
+        rows_out=len(comparison),
+        output_path=str(paths.empirical_comparison_csv),
+    )
 
     tracker.record(
         stage="rolling_baselines",
@@ -205,15 +233,38 @@ def compute_rolling_baseline_correlations(
         "window_lengths": list(window_lengths),
         "step_size": int(step_size),
         "K_roll": int(k),
+        "max_workers": int(effective_max_workers),
         "baseline_simulations": audit.groupby("baseline_type").size().to_dict(),
         "correlation_kinds": list(ROLLING_CORRELATION_METRICS),
+        "runtime_log_operations": [
+            "read_baseline_returns",
+            "compute_rolling_metrics_w2048",
+            "compute_rolling_metrics_w8192",
+            "compute_simulation_rolling_correlations",
+            "write_simulation_correlations",
+            "summarize_baseline_correlations",
+            "compare_empirical_correlations",
+            "compute_rolling_baseline_correlations",
+            "write_rolling_baseline_report",
+        ],
         "rows": {
             "simulations": int(len(simulations)),
             "summary": int(len(summary)),
             "empirical_comparison": int(len(comparison)),
         },
     }
+    report_timer = start_timer()
     write_json(paths.report_json, report)
+    tracker.record(
+        stage="rolling_baselines",
+        operation="write_rolling_baseline_report",
+        started_at_utc=report_timer.started_at_utc,
+        elapsed_seconds=report_timer.elapsed_seconds,
+        rows_in=1,
+        rows_out=1,
+        output_path=str(paths.report_json),
+        flush=True,
+    )
     return report
 
 
@@ -226,10 +277,27 @@ def _rolling_baseline_worker(args: tuple[Any, ...]) -> RollingBaselineWorkerResu
     timer = start_timer()
     runtime_rows: list[dict[str, Any]] = []
     try:
+        read_timer = start_timer()
         returns = pd.read_parquet(return_parquet, columns=[LOG_RETURN])
         values = returns[LOG_RETURN].astype(float).to_numpy()
         require_finite_array(values, f"{baseline_type} {simulation_id} returns")
-        rows = compute_rolling_correlation_rows_for_values(
+        runtime_rows.append(
+            runtime_row(
+                run_id="",
+                stage="rolling_baselines",
+                operation="read_baseline_returns",
+                started_at_utc=read_timer.started_at_utc,
+                elapsed_seconds=read_timer.elapsed_seconds,
+                baseline_type=baseline_type,
+                simulation_id=simulation_id,
+                status="success",
+                rows_in=n,
+                rows_out=len(values),
+                output_path=str(return_parquet),
+                error_message="",
+            )
+        )
+        rows, metric_runtime_rows = compute_rolling_correlation_rows_for_values(
             values,
             baseline_type=baseline_type,
             simulation_id=simulation_id,
@@ -237,6 +305,7 @@ def _rolling_baseline_worker(args: tuple[Any, ...]) -> RollingBaselineWorkerResu
             step_size=step_size,
             k=k,
         )
+        runtime_rows.extend(metric_runtime_rows)
         status = "success"
         error_message = ""
     except Exception as error:
@@ -275,10 +344,12 @@ def compute_rolling_correlation_rows_for_values(
     window_lengths: tuple[int, ...],
     step_size: int,
     k: int,
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     rows: list[dict[str, Any]] = []
+    runtime_rows: list[dict[str, Any]] = []
     components = detail_components(k)
     for window_length in window_lengths:
+        metric_timer = start_timer()
         rms_matrix, share_matrix = rolling_metric_matrices(
             values,
             window_length=window_length,
@@ -306,7 +377,23 @@ def compute_rolling_correlation_rows_for_values(
                 simulation_id=simulation_id,
             )
         )
-    return rows
+        runtime_rows.append(
+            runtime_row(
+                run_id="",
+                stage="rolling_baselines",
+                operation=f"compute_rolling_metrics_w{window_length}",
+                started_at_utc=metric_timer.started_at_utc,
+                elapsed_seconds=metric_timer.elapsed_seconds,
+                baseline_type=baseline_type,
+                simulation_id=simulation_id,
+                status="success",
+                rows_in=len(values),
+                rows_out=2 * k * k,
+                output_path="",
+                error_message="",
+            )
+        )
+    return rows, runtime_rows
 
 
 def rolling_metric_matrices(
