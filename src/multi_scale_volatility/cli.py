@@ -37,6 +37,8 @@ from multi_scale_volatility.config.paths import (
     ROLLING_BASELINE_RESULTS_DIR,
     ROLLING_BASELINE_RUNTIME_LOG_CSV,
     ROLLING_BASELINE_PLOTS_DIR,
+    ROLLING_REGIME_PLOTS_DIR,
+    ROLLING_REGIME_RESULTS_DIR,
     ROLLING_WINDOWS_PLOTS_DIR,
     ROLLING_RESULTS_DIR,
     SHUFFLE_DECOMPOSITION_CSV,
@@ -67,6 +69,10 @@ from multi_scale_volatility.plotting.rolling_baselines import (
     RollingBaselinePlotPaths,
     create_rolling_baseline_plots,
 )
+from multi_scale_volatility.plotting.rolling_regimes import (
+    RollingRegimePlotPaths,
+    create_rolling_regime_plots,
+)
 from multi_scale_volatility.preprocessing import PreprocessingPaths, run_preprocessing
 from multi_scale_volatility.runtime import configure_logging
 from multi_scale_volatility.rolling import (
@@ -79,6 +85,11 @@ from multi_scale_volatility.rolling import (
 from multi_scale_volatility.rolling_baselines import (
     RollingBaselineCorrelationPaths,
     compute_rolling_baseline_correlations,
+)
+from multi_scale_volatility.rolling_regimes import (
+    MIN_EPISODE_WINDOWS,
+    RollingRegimePaths,
+    compute_rolling_regime_diagnostics,
 )
 from multi_scale_volatility.volatility import VolatilityPaths, compute_volatility_metrics
 
@@ -112,6 +123,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_monte_carlo_comparisons(subparsers)
     _add_rolling(subparsers)
     _add_rolling_baselines(subparsers)
+    _add_rolling_regimes(subparsers)
     _add_plot(subparsers)
     _add_run_all(subparsers)
 
@@ -266,6 +278,19 @@ def _add_rolling_baselines(
     parser.set_defaults(handler=_handle_rolling_baselines)
 
 
+def _add_rolling_regimes(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    parser = subparsers.add_parser(
+        "rolling-regimes",
+        help="Create V2.3 rolling volatility-state regime diagnostics.",
+    )
+    parser.add_argument("--results-dir", type=Path, default=ROLLING_RESULTS_DIR)
+    parser.add_argument("--output-dir", type=Path, default=ROLLING_REGIME_RESULTS_DIR)
+    parser.add_argument("--min-episode-windows", type=int, default=MIN_EPISODE_WINDOWS)
+    parser.set_defaults(handler=_handle_rolling_regimes)
+
+
 def _add_plot(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser("plot", help="Create plot artifacts.")
     plot_subparsers = parser.add_subparsers(dest="plot_command")
@@ -333,6 +358,28 @@ def _add_plot(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -
         default=ROLLING_BASELINE_PLOTS_DIR,
     )
     rolling_baselines.set_defaults(handler=_handle_plot_rolling_baselines)
+
+    rolling_regimes = plot_subparsers.add_parser(
+        "rolling-regimes",
+        help="Create V2.3 rolling volatility-state regime plots.",
+    )
+    rolling_regimes.add_argument("--final-csv", type=Path, default=FINAL_RETURNS_CSV)
+    rolling_regimes.add_argument(
+        "--results-dir",
+        type=Path,
+        default=ROLLING_REGIME_RESULTS_DIR,
+    )
+    rolling_regimes.add_argument(
+        "--rolling-results-dir",
+        type=Path,
+        default=ROLLING_RESULTS_DIR,
+    )
+    rolling_regimes.add_argument(
+        "--output-dir",
+        type=Path,
+        default=ROLLING_REGIME_PLOTS_DIR,
+    )
+    rolling_regimes.set_defaults(handler=_handle_plot_rolling_regimes)
 
     all_plots = plot_subparsers.add_parser(
         "all", help="Create all plot artifacts.")
@@ -507,6 +554,17 @@ def _handle_rolling_baselines(args: argparse.Namespace) -> None:
     _print_json(report)
 
 
+def _handle_rolling_regimes(args: argparse.Namespace) -> None:
+    report = compute_rolling_regime_diagnostics(
+        RollingRegimePaths(
+            results_dir=args.results_dir,
+            output_dir=args.output_dir,
+        ),
+        min_episode_windows=args.min_episode_windows,
+    )
+    _print_json(report)
+
+
 def _handle_plot_memo(args: argparse.Namespace) -> None:
     _print_paths(
         create_v11_memo_plots(
@@ -565,6 +623,19 @@ def _handle_plot_rolling_baselines(args: argparse.Namespace) -> None:
         create_rolling_baseline_plots(
             RollingBaselinePlotPaths(
                 results_dir=args.results_dir,
+                output_dir=args.output_dir,
+            )
+        )
+    )
+
+
+def _handle_plot_rolling_regimes(args: argparse.Namespace) -> None:
+    _print_paths(
+        create_rolling_regime_plots(
+            RollingRegimePlotPaths(
+                final_returns_csv=args.final_csv,
+                results_dir=args.results_dir,
+                rolling_results_dir=args.rolling_results_dir,
                 output_dir=args.output_dir,
             )
         )
