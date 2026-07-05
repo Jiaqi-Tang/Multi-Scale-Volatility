@@ -1,9 +1,9 @@
 {
-  "input_csv": "data\\final\\eurusd_5m_log_returns_final.csv",
-  "metadata_csv": "results\\rolling\\rolling_window_metadata.csv",
-  "layer_volatility_csv": "results\\rolling\\rolling_layer_volatility.csv",
-  "summary_csv": "results\\rolling\\rolling_window_summary.csv",
-  "scale_group_summary_csv": "results\\rolling\\rolling_scale_group_summary.csv",
+  "input_csv": "data\\processed\\eurusd_5m_log_returns_final.csv",
+  "metadata_csv": "results\\rolling_window_diagnosis\\rolling_metrics\\rolling_window_metadata.csv",
+  "layer_volatility_csv": "results\\rolling_window_diagnosis\\rolling_metrics\\rolling_layer_volatility.csv",
+  "summary_csv": "results\\rolling_window_diagnosis\\rolling_metrics\\rolling_window_summary.csv",
+  "scale_group_summary_csv": "results\\rolling_window_diagnosis\\rolling_metrics\\rolling_scale_group_summary.csv",
   "N": 735232,
   "base_interval_minutes": 5,
   "window_lengths": [

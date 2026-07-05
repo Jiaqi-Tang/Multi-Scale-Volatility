@@ -13,8 +13,11 @@ from multi_scale_volatility.core.config.names import BASE_INTERVAL_MINUTES, DEFA
 from multi_scale_volatility.core.config.paths import CLEAN_RETURNS_CSV, FINAL_RETURNS_CSV, TRUNCATION_REPORT_JSON
 from multi_scale_volatility.core.io import write_csv
 from multi_scale_volatility.core.io import write_json
+from multi_scale_volatility.app.runtime import get_logger
 from multi_scale_volatility.core.utils.time_utils import iso_or_none
 from multi_scale_volatility.core.utils.validation import require_non_negative_k
+
+logger = get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -31,6 +34,7 @@ def standardize_length(
     """Trim clean returns from the end so length is divisible by 2**k."""
     paths = paths or LengthStandardizationPaths()
     require_non_negative_k(k)
+    logger.info("Standardizing return length from %s", paths.input_csv)
 
     data = pd.read_csv(paths.input_csv, parse_dates=[
                        TIMESTAMP_UTC, PREVIOUS_TIMESTAMP_UTC])
@@ -85,4 +89,5 @@ def standardize_length(
     }
 
     write_json(paths.report_json, report)
+    logger.info("Wrote standardized returns to %s", paths.output_csv)
     return report

@@ -1,10 +1,10 @@
 {
-  "summary_csv": "results\\rolling\\rolling_window_summary.csv",
-  "scale_group_summary_csv": "results\\rolling\\rolling_scale_group_summary.csv",
-  "regime_metrics_csv": "results\\rolling\\regime\\rolling_regime_metrics.csv",
-  "episode_summary_csv": "results\\rolling\\regime\\regime_episode_summary.csv",
-  "cell_counts_csv": "results\\rolling\\regime\\regime_cell_counts.csv",
-  "episode_counts_csv": "results\\rolling\\regime\\regime_episode_counts.csv",
+  "summary_csv": "results\\rolling_window_diagnosis\\rolling_metrics\\rolling_window_summary.csv",
+  "scale_group_summary_csv": "results\\rolling_window_diagnosis\\rolling_metrics\\rolling_scale_group_summary.csv",
+  "regime_metrics_csv": "results\\rolling_window_diagnosis\\regimes\\rolling_regime_metrics.csv",
+  "episode_summary_csv": "results\\rolling_window_diagnosis\\regimes\\regime_episode_summary.csv",
+  "cell_counts_csv": "results\\rolling_window_diagnosis\\regimes\\regime_cell_counts.csv",
+  "episode_counts_csv": "results\\rolling_window_diagnosis\\regimes\\regime_episode_counts.csv",
   "window_counts": {
     "2048": 2546,
     "8192": 2525

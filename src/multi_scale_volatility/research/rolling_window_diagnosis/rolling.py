@@ -38,6 +38,7 @@ from multi_scale_volatility.research.decomposition import (
     RECONSTRUCTION_TOLERANCE,
     decompose_values,
 )
+from multi_scale_volatility.app.runtime import get_logger
 from multi_scale_volatility.core.io import write_csv, write_json
 from multi_scale_volatility.core.utils.validation import require_finite_array, require_positive_k
 
@@ -51,6 +52,7 @@ ROLLING_SCALE_GROUPS = {
     "coarse": ("D_07", "D_08", "D_09"),
 }
 GROUP_SHARE_TOLERANCE = 1e-12
+logger = get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -97,6 +99,11 @@ def compute_rolling_decomposition_diagnostics(
 
     paths = paths or RollingPaths()
     require_positive_k(k)
+    logger.info(
+        "Computing rolling diagnostics from %s into %s",
+        paths.input_csv,
+        paths.output_dir,
+    )
     if step_size <= 0:
         raise ValueError("step_size must be positive")
     for window_length in window_lengths:
@@ -217,6 +224,7 @@ def compute_rolling_decomposition_diagnostics(
         ),
     }
     write_json(paths.report_json, report)
+    logger.info("Wrote rolling diagnostics to %s", paths.output_dir)
     return report
 
 

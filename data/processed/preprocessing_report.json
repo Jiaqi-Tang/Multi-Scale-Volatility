@@ -13341,9 +13341,9 @@
     }
   ],
   "outputs": {
-    "clean_1m_csv": "data\\intermediate\\eurusd_1m_utc_clean.csv",
-    "ohlc_5m_csv": "data\\intermediate\\eurusd_5m_ohlc_utc_nonempty.csv",
-    "clean_returns_csv": "data\\intermediate\\eurusd_5m_log_returns_clean.csv",
-    "report_json": "data\\intermediate\\preprocessing_report.json"
+    "clean_1m_csv": "data\\processed\\eurusd_1m_utc_clean.csv",
+    "ohlc_5m_csv": "data\\processed\\eurusd_5m_ohlc_utc_nonempty.csv",
+    "clean_returns_csv": "data\\processed\\eurusd_5m_log_returns_clean.csv",
+    "report_json": "data\\processed\\preprocessing_report.json"
   }
 }

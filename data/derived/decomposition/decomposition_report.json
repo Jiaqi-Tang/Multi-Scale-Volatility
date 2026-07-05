@@ -3,8 +3,8 @@
   "base_interval_minutes": 5,
   "series": {
     "final": {
-      "input_csv": "data\\final\\eurusd_5m_log_returns_final.csv",
-      "output_csv": "data\\decomposition\\final_decomposition.csv",
+      "input_csv": "data\\processed\\eurusd_5m_log_returns_final.csv",
+      "output_csv": "data\\derived\\decomposition\\final_decomposition.csv",
       "N": 735232,
       "K": 11,
       "block_size_max": 2048,

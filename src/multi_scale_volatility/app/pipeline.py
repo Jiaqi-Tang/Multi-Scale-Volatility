@@ -28,8 +28,10 @@ from multi_scale_volatility.research.decomposition import DecompositionInput, de
 from multi_scale_volatility.research.length_standardization import LengthStandardizationPaths, standardize_length
 from multi_scale_volatility.research.global_diagnosis.monte_carlo_metrics import (
     MonteCarloMetricPaths,
-    compute_entropy_rows,
     compute_monte_carlo_metrics,
+)
+from multi_scale_volatility.research.global_diagnosis.monte_carlo_rows import (
+    compute_entropy_rows,
     compute_volatility_rows,
 )
 from multi_scale_volatility.plotting.global_results import (

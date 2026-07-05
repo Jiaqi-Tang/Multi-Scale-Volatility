@@ -20,6 +20,7 @@ from multi_scale_volatility.core.config.paths import (
     ROLLING_SCALE_GROUP_SUMMARY_CSV,
     ROLLING_WINDOW_SUMMARY_CSV,
 )
+from multi_scale_volatility.app.runtime import get_logger
 from multi_scale_volatility.core.io import write_csv, write_json
 from multi_scale_volatility.research.rolling_window_diagnosis.rolling import ROLLING_STEP_SIZE
 
@@ -32,6 +33,7 @@ PROFILE_REGIMES = (
     "lowVol_lowFine",
 )
 MIN_EPISODE_WINDOWS = 3
+logger = get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -78,6 +80,7 @@ def compute_rolling_regime_diagnostics(
         raise ValueError("min_episode_windows must be positive")
 
     paths = paths or RollingRegimePaths()
+    logger.info("Computing rolling regime diagnostics into %s", paths.output_dir)
     summary = pd.read_csv(paths.summary_csv)
     groups = pd.read_csv(paths.scale_group_summary_csv)
 
@@ -115,6 +118,7 @@ def compute_rolling_regime_diagnostics(
         "profile_regimes": list(PROFILE_REGIMES),
     }
     write_json(paths.report_json, report)
+    logger.info("Wrote rolling regime diagnostics to %s", paths.output_dir)
     return report
 
 

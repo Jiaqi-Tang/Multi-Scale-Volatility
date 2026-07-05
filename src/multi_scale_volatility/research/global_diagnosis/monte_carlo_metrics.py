@@ -2,32 +2,21 @@
 
 from __future__ import annotations
 
-from concurrent.futures import ProcessPoolExecutor
-import itertools
-import math
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pandas as pd
 
-from multi_scale_volatility.core.components import ComponentSpec, component_specs
-from multi_scale_volatility.core.config.names import (
-    COMPONENT,
-    COMPONENT_TYPE,
-    LOG_RETURN,
-    ORIGINAL,
-    TIMESTAMP_UTC,
-)
-from multi_scale_volatility.core.config.names import (
-    BASE_INTERVAL_MINUTES,
-    DEFAULT_K,
-    MONTE_CARLO_BASELINE_QUANTILE_METHOD,
-)
+from multi_scale_volatility.app.parallel import effective_worker_count, process_pool_map
+from multi_scale_volatility.app.runtime import RuntimeTracker, get_logger, start_timer
+from multi_scale_volatility.core.components import component_specs
 from multi_scale_volatility.core.config.names import (
     ANNUALIZED_RMS_VOLATILITY,
+    BASE_INTERVAL_MINUTES,
+    COMPONENT,
+    COMPONENT_TYPE,
+    DEFAULT_K,
     DETAIL_ENERGY_SHARE,
     EFFECTIVE_N,
     ENERGY,
@@ -42,12 +31,15 @@ from multi_scale_volatility.core.config.names import (
     TOTAL_COMPONENT_ENERGY_SHARE,
 )
 from multi_scale_volatility.core.config.paths import (
+    FINAL_DECOMPOSITION_CSV,
+    FINAL_RETURNS_CSV,
+    LAYER_ENTROPY_CSV,
+    MC_ABS_COMPONENT_CORRELATION_EMPIRICAL_COMPARISON_CSV,
     MC_ABS_COMPONENT_CORRELATION_SIMULATIONS_CSV,
     MC_ABS_COMPONENT_CORRELATION_SUMMARY_CSV,
-    MC_ABS_COMPONENT_CORRELATION_EMPIRICAL_COMPARISON_CSV,
+    MC_ACF_EMPIRICAL_COMPARISON_CSV,
     MC_ACF_SIMULATIONS_CSV,
     MC_ACF_SUMMARY_CSV,
-    MC_ACF_EMPIRICAL_COMPARISON_CSV,
     MC_COMPONENT_ACF_EMPIRICAL_COMPARISON_CSV,
     MC_COMPONENT_ACF_SIMULATIONS_CSV,
     MC_COMPONENT_ACF_SUMMARY_CSV,
@@ -57,47 +49,37 @@ from multi_scale_volatility.core.config.paths import (
     MC_LAYER_VOLATILITY_EMPIRICAL_COMPARISON_CSV,
     MC_LAYER_VOLATILITY_SIMULATIONS_CSV,
     MC_LAYER_VOLATILITY_SUMMARY_CSV,
-    FINAL_DECOMPOSITION_CSV,
-    FINAL_RETURNS_CSV,
-    LAYER_ENTROPY_CSV,
     MONTE_CARLO_BASELINE_AUDIT_CSV,
     MONTE_CARLO_BASELINE_RUNTIME_LOG_CSV,
     MONTE_CARLO_BASELINES_RESULTS_DIR,
     VOLATILITY_CSV,
 )
-from multi_scale_volatility.core.config.names import SERIES_FINAL
+from multi_scale_volatility.core.io import write_csv
+from multi_scale_volatility.core.utils.validation import require_positive_k
 from multi_scale_volatility.research.global_diagnosis.entropy import (
     DELAY,
     EMBEDDING_DIMENSION,
     JITTER_MAGNITUDE,
     JITTER_SEED,
-    _add_jitter,
-    _component_jitter_seed,
-    _permutation_entropy,
 )
-from multi_scale_volatility.core.components import compress_component, decomposition_components
-from multi_scale_volatility.core.stats import (
-    absolute_component_correlation,
-    autocorrelation,
-    compressed_layer_autocorrelation,
+from multi_scale_volatility.research.global_diagnosis.monte_carlo_rows import (
+    _compute_simulation_metrics_worker,
 )
-from multi_scale_volatility.core.io import write_csv
-from multi_scale_volatility.app.runtime import (
-    RuntimeTracker,
-    get_logger,
-    runtime_row,
-    start_timer,
+from multi_scale_volatility.research.global_diagnosis.monte_carlo_summaries import (
+    compare_empirical_abs_component_correlation,
+    compare_empirical_acf,
+    compare_empirical_component_acf,
+    compare_empirical_entropy,
+    compare_empirical_volatility,
+    summarize_metrics,
 )
-from multi_scale_volatility.core.utils.validation import require_finite_array, require_positive_k
 
 RETURN_ACF_MAX_LAG = 288
 ABS_RETURN_ACF_MAX_LAG = 1440
 SHORT_COMPONENT_ACF_MAX_LAG = 1440
 LONG_COMPONENT_ACF_MAX_LAG = 6336
-SUMMARY_QUANTILES = (0.05, 0.5, 0.95)
 RUNTIME_LOG_BATCH_SIZE = 10
 logger = get_logger(__name__)
-
 
 @dataclass(frozen=True)
 class MonteCarloMetricPaths:
@@ -170,239 +152,6 @@ class MonteCarloMetricPaths:
         return self.results_dir / MC_ABS_COMPONENT_CORRELATION_EMPIRICAL_COMPARISON_CSV.name
 
 
-@dataclass(frozen=True)
-class SimulationMetricResult:
-    volatility_rows: list[dict[str, Any]]
-    entropy_rows: list[dict[str, Any]]
-    acf_rows: list[dict[str, Any]]
-    component_acf_rows: list[dict[str, Any]]
-    corr_rows: list[dict[str, Any]]
-    runtime_rows: list[dict[str, Any]]
-    status: str
-    error_message: str
-
-
-def _compute_simulation_metrics_worker(args: tuple[Any, ...]) -> SimulationMetricResult:
-    (
-        record,
-        specs,
-        components,
-        k,
-        embedding_dimension,
-        delay,
-        jitter_seed,
-        jitter_magnitude,
-        return_acf_max_lag,
-        abs_return_acf_max_lag,
-        short_component_acf_max_lag,
-        long_component_acf_max_lag,
-    ) = args
-    baseline_type = str(record["baseline_type"])
-    simulation_id = int(record["simulation_id"])
-    return_parquet = record["return_parquet"]
-    decomposition_parquet = record["decomposition_parquet"]
-    n = int(record["n"])
-
-    simulation_timer = start_timer()
-    runtime_rows: list[dict[str, Any]] = []
-    rows_out = 0
-    try:
-        read_timer = start_timer()
-        returns = pd.read_parquet(return_parquet, columns=[LOG_RETURN])
-        decomposition = pd.read_parquet(decomposition_parquet, columns=components)
-        values = returns[LOG_RETURN].astype(float).to_numpy()
-        require_finite_array(values, f"{baseline_type} {simulation_id} returns")
-        runtime_rows.append(
-            runtime_row(
-                run_id="",
-                stage="monte_carlo_metrics",
-                operation="read_simulation_artifacts",
-                started_at_utc=read_timer.started_at_utc,
-                elapsed_seconds=read_timer.elapsed_seconds,
-                baseline_type=baseline_type,
-                simulation_id=simulation_id,
-                status="success",
-                rows_in=n,
-                rows_out=len(decomposition),
-                output_path=f"{return_parquet};{decomposition_parquet}",
-                error_message="",
-            )
-        )
-
-        metric_timer = start_timer()
-        volatility_rows = compute_volatility_rows(
-            decomposition,
-            baseline_type=baseline_type,
-            simulation_id=simulation_id,
-            k=k,
-            specs=specs,
-        )
-        rows_out += len(volatility_rows)
-        runtime_rows.append(
-            runtime_row(
-                run_id="",
-                stage="monte_carlo_metrics",
-                operation="compute_volatility_metrics",
-                started_at_utc=metric_timer.started_at_utc,
-                elapsed_seconds=metric_timer.elapsed_seconds,
-                baseline_type=baseline_type,
-                simulation_id=simulation_id,
-                status="success",
-                rows_in=len(decomposition),
-                rows_out=len(volatility_rows),
-                output_path=str(decomposition_parquet),
-                error_message="",
-            )
-        )
-
-        metric_timer = start_timer()
-        entropy_rows = compute_entropy_rows(
-            decomposition,
-            baseline_type=baseline_type,
-            simulation_id=simulation_id,
-            k=k,
-            embedding_dimension=embedding_dimension,
-            delay=delay,
-            jitter_seed=jitter_seed,
-            jitter_magnitude=jitter_magnitude,
-            specs=specs,
-        )
-        rows_out += len(entropy_rows)
-        runtime_rows.append(
-            runtime_row(
-                run_id="",
-                stage="monte_carlo_metrics",
-                operation="compute_entropy_metrics",
-                started_at_utc=metric_timer.started_at_utc,
-                elapsed_seconds=metric_timer.elapsed_seconds,
-                baseline_type=baseline_type,
-                simulation_id=simulation_id,
-                status="success",
-                rows_in=len(decomposition),
-                rows_out=len(entropy_rows),
-                output_path=str(decomposition_parquet),
-                error_message="",
-            )
-        )
-
-        metric_timer = start_timer()
-        acf_rows = compute_acf_rows(
-            values,
-            baseline_type=baseline_type,
-            simulation_id=simulation_id,
-            return_acf_max_lag=return_acf_max_lag,
-            abs_return_acf_max_lag=abs_return_acf_max_lag,
-        )
-        rows_out += len(acf_rows)
-        runtime_rows.append(
-            runtime_row(
-                run_id="",
-                stage="monte_carlo_metrics",
-                operation="compute_acf_metrics",
-                started_at_utc=metric_timer.started_at_utc,
-                elapsed_seconds=metric_timer.elapsed_seconds,
-                baseline_type=baseline_type,
-                simulation_id=simulation_id,
-                status="success",
-                rows_in=len(values),
-                rows_out=len(acf_rows),
-                output_path=str(return_parquet),
-                error_message="",
-            )
-        )
-
-        metric_timer = start_timer()
-        component_acf_rows = compute_component_acf_rows(
-            decomposition,
-            baseline_type=baseline_type,
-            simulation_id=simulation_id,
-            k=k,
-            short_max_lag=short_component_acf_max_lag,
-            long_max_lag=long_component_acf_max_lag,
-            specs=specs,
-        )
-        rows_out += len(component_acf_rows)
-        runtime_rows.append(
-            runtime_row(
-                run_id="",
-                stage="monte_carlo_metrics",
-                operation="compute_component_acf_metrics",
-                started_at_utc=metric_timer.started_at_utc,
-                elapsed_seconds=metric_timer.elapsed_seconds,
-                baseline_type=baseline_type,
-                simulation_id=simulation_id,
-                status="success",
-                rows_in=len(decomposition),
-                rows_out=len(component_acf_rows),
-                output_path=str(decomposition_parquet),
-                error_message="",
-            )
-        )
-
-        metric_timer = start_timer()
-        corr_rows = compute_abs_component_correlation_rows(
-            decomposition,
-            baseline_type=baseline_type,
-            simulation_id=simulation_id,
-            k=k,
-            components=components,
-        )
-        rows_out += len(corr_rows)
-        runtime_rows.append(
-            runtime_row(
-                run_id="",
-                stage="monte_carlo_metrics",
-                operation="compute_abs_component_correlation_metrics",
-                started_at_utc=metric_timer.started_at_utc,
-                elapsed_seconds=metric_timer.elapsed_seconds,
-                baseline_type=baseline_type,
-                simulation_id=simulation_id,
-                status="success",
-                rows_in=len(decomposition),
-                rows_out=len(corr_rows),
-                output_path=str(decomposition_parquet),
-                error_message="",
-            )
-        )
-        status = "success"
-        error_message = ""
-    except Exception as error:
-        status = "error"
-        error_message = str(error)
-        volatility_rows = []
-        entropy_rows = []
-        acf_rows = []
-        component_acf_rows = []
-        corr_rows = []
-
-    runtime_rows.append(
-        runtime_row(
-            run_id="",
-            stage="monte_carlo_metrics",
-            operation="compute_simulation_metrics",
-            started_at_utc=simulation_timer.started_at_utc,
-            elapsed_seconds=simulation_timer.elapsed_seconds,
-            baseline_type=baseline_type,
-            simulation_id=simulation_id,
-            status=status,
-            rows_in=n,
-            rows_out=rows_out if status == "success" else 0,
-            output_path=str(decomposition_parquet),
-            error_message=error_message,
-        )
-    )
-    return SimulationMetricResult(
-        volatility_rows=volatility_rows,
-        entropy_rows=entropy_rows,
-        acf_rows=acf_rows,
-        component_acf_rows=component_acf_rows,
-        corr_rows=corr_rows,
-        runtime_rows=runtime_rows,
-        status=status,
-        error_message=error_message,
-    )
-
-
 def compute_monte_carlo_metrics(
     paths: MonteCarloMetricPaths | None = None,
     k: int = DEFAULT_K,
@@ -453,30 +202,30 @@ def compute_monte_carlo_metrics(
         for record in audit.to_dict("records")
     ]
 
-    effective_max_workers = max_workers or min(4, os.cpu_count() or 1)
+    effective_max_workers = effective_worker_count(max_workers)
     logger.info(
         "Computing Monte Carlo metrics for %s simulations with %s workers",
         len(worker_args),
         effective_max_workers,
     )
-    with ProcessPoolExecutor(max_workers=effective_max_workers) as executor:
-        for index, result in enumerate(
-            executor.map(_compute_simulation_metrics_worker, worker_args),
-            start=1,
-        ):
-            volatility_rows.extend(result.volatility_rows)
-            entropy_rows.extend(result.entropy_rows)
-            acf_rows.extend(result.acf_rows)
-            component_acf_rows.extend(result.component_acf_rows)
-            corr_rows.extend(result.corr_rows)
-            tracker.extend(
-                result.runtime_rows,
-                flush=index % RUNTIME_LOG_BATCH_SIZE == 0 or result.status != "success",
-            )
-            if result.status != "success":
-                raise RuntimeError(result.error_message)
-            if index % RUNTIME_LOG_BATCH_SIZE == 0:
-                logger.info("Computed metrics for %s/%s simulations", index, len(worker_args))
+    for index, result in process_pool_map(
+        _compute_simulation_metrics_worker,
+        worker_args,
+        max_workers=max_workers,
+    ):
+        volatility_rows.extend(result.volatility_rows)
+        entropy_rows.extend(result.entropy_rows)
+        acf_rows.extend(result.acf_rows)
+        component_acf_rows.extend(result.component_acf_rows)
+        corr_rows.extend(result.corr_rows)
+        tracker.extend(
+            result.runtime_rows,
+            flush=index % RUNTIME_LOG_BATCH_SIZE == 0 or result.status != "success",
+        )
+        if result.status != "success":
+            raise RuntimeError(result.error_message)
+        if index % RUNTIME_LOG_BATCH_SIZE == 0:
+            logger.info("Computed metrics for %s/%s simulations", index, len(worker_args))
     tracker.flush()
 
     volatility = pd.DataFrame(volatility_rows)
@@ -801,511 +550,4 @@ def compute_monte_carlo_comparisons(
         },
     }
 
-
-def compute_volatility_rows(
-    frame: pd.DataFrame,
-    baseline_type: str,
-    simulation_id: int,
-    k: int,
-    specs: list[ComponentSpec] | None = None,
-) -> list[dict[str, Any]]:
-    annualization_periods = 252 * 24 * (60 // BASE_INTERVAL_MINUTES)
-    annualization_factor = float(np.sqrt(annualization_periods))
-    specs = specs or component_specs(
-        k,
-        include_original=False,
-        base_interval_minutes=BASE_INTERVAL_MINUTES,
-    )
-    n = len(frame)
-    detail_energies: dict[str, float] = {}
-    component_energies: dict[str, float] = {}
-    rows: list[dict[str, Any]] = []
-
-    for spec in specs:
-        values = frame[spec.name].astype(float).to_numpy()
-        energy = float(np.dot(values, values))
-        component_energies[spec.name] = energy
-        if spec.kind == "detail":
-            detail_energies[spec.name] = energy
-        rows.append(
-            {
-                "baseline_type": baseline_type,
-                "simulation_id": simulation_id,
-                COMPONENT: spec.name,
-                K: spec.scale,
-                COMPONENT_TYPE: spec.kind,
-                SCALE_MINUTES: spec.scale_minutes,
-                SCALE_DAYS: spec.scale_days,
-                ENERGY: energy,
-                RMS_VOLATILITY: float(np.sqrt(energy / n)),
-                ANNUALIZED_RMS_VOLATILITY: float(np.sqrt(energy / n) * annualization_factor),
-                DETAIL_ENERGY_SHARE: np.nan,
-                TOTAL_COMPONENT_ENERGY_SHARE: np.nan,
-            }
-        )
-
-    detail_sum = float(sum(detail_energies.values()))
-    total_sum = float(sum(component_energies.values()))
-    for row in rows:
-        component = row[COMPONENT]
-        if row[COMPONENT_TYPE] == "detail":
-            row[DETAIL_ENERGY_SHARE] = component_energies[component] / detail_sum
-        row[TOTAL_COMPONENT_ENERGY_SHARE] = component_energies[component] / total_sum
-    return rows
-
-
-def compute_entropy_rows(
-    frame: pd.DataFrame,
-    baseline_type: str,
-    simulation_id: int,
-    k: int,
-    embedding_dimension: int,
-    delay: int,
-    jitter_seed: int,
-    jitter_magnitude: float,
-    specs: list[ComponentSpec] | None = None,
-) -> list[dict[str, Any]]:
-    specs = specs or component_specs(
-        k,
-        include_original=False,
-        base_interval_minutes=BASE_INTERVAL_MINUTES,
-    )
-    rows: list[dict[str, Any]] = []
-    for spec in specs:
-        values = frame[spec.name].astype(float).to_numpy()
-        compressed = compress_component(values, spec.name)
-        component_seed = _component_jitter_seed(
-            jitter_seed,
-            f"{baseline_type}_{simulation_id:03d}",
-            spec.name,
-        )
-        jittered = _add_jitter(compressed, component_seed, jitter_magnitude)
-        entropy_result = _permutation_entropy(jittered, embedding_dimension, delay)
-        rows.append(
-            {
-                "baseline_type": baseline_type,
-                "simulation_id": simulation_id,
-                COMPONENT: spec.name,
-                K: spec.scale,
-                COMPONENT_TYPE: spec.kind,
-                SCALE_MINUTES: spec.scale_minutes,
-                SCALE_DAYS: spec.scale_days,
-                REPEAT_LENGTH: spec.repeat_length,
-                EFFECTIVE_N: len(compressed),
-                ORDINAL_WINDOWS: entropy_result[ORDINAL_WINDOWS],
-                PERMUTATION_ENTROPY: entropy_result[PERMUTATION_ENTROPY],
-                NORMALIZED_ENTROPY: entropy_result[NORMALIZED_ENTROPY],
-            }
-        )
-    return rows
-
-
-def compute_acf_rows(
-    values: np.ndarray,
-    baseline_type: str,
-    simulation_id: int,
-    return_acf_max_lag: int,
-    abs_return_acf_max_lag: int,
-) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    for acf_kind, acf_values, max_lag in [
-        ("return", autocorrelation(values, return_acf_max_lag), return_acf_max_lag),
-        (
-            "absolute_return",
-            autocorrelation(np.abs(values), abs_return_acf_max_lag),
-            abs_return_acf_max_lag,
-        ),
-    ]:
-        rows.extend(
-            {
-                "baseline_type": baseline_type,
-                "simulation_id": simulation_id,
-                "acf_kind": acf_kind,
-                "lag": lag,
-                "max_lag": max_lag,
-                "acf": float(value),
-            }
-            for lag, value in enumerate(acf_values, start=1)
-        )
-    return rows
-
-
-def compute_component_acf_rows(
-    frame: pd.DataFrame,
-    baseline_type: str,
-    simulation_id: int,
-    k: int,
-    short_max_lag: int,
-    long_max_lag: int,
-    specs: list[ComponentSpec] | None = None,
-) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    specs = specs or component_specs(
-        k,
-        include_original=False,
-        base_interval_minutes=BASE_INTERVAL_MINUTES,
-    )
-    for spec in specs:
-        max_lag = short_max_lag if spec.kind == "detail" and spec.scale <= 6 else long_max_lag
-        values = frame[spec.name].astype(float).to_numpy()
-        for acf_kind, series_values in [
-            ("component", values),
-            ("absolute_component", np.abs(values)),
-        ]:
-            lags, acf_values = compressed_layer_autocorrelation(
-                series_values,
-                spec.name,
-                max_lag,
-            )
-            rows.extend(
-                {
-                    "baseline_type": baseline_type,
-                    "simulation_id": simulation_id,
-                    COMPONENT: spec.name,
-                    K: spec.scale,
-                    COMPONENT_TYPE: spec.kind,
-                    SCALE_MINUTES: spec.scale_minutes,
-                    SCALE_DAYS: spec.scale_days,
-                    "acf_kind": acf_kind,
-                    "lag": int(lag),
-                    "compressed_lag": int(compressed_lag),
-                    "max_lag": int(max_lag),
-                    "acf": float(value),
-                }
-                for compressed_lag, (lag, value) in enumerate(
-                    zip(lags, acf_values, strict=True),
-                    start=1,
-                )
-            )
-    return rows
-
-
-def compute_abs_component_correlation_rows(
-    frame: pd.DataFrame,
-    baseline_type: str,
-    simulation_id: int,
-    k: int,
-    components: list[str] | None = None,
-) -> list[dict[str, Any]]:
-    components = components or decomposition_components(k, include_original=False)
-    corr = absolute_component_correlation(frame, components)
-    return [
-        {
-            "baseline_type": baseline_type,
-            "simulation_id": simulation_id,
-            "component_i": component_i,
-            "component_j": component_j,
-            "correlation_abs": float(corr.loc[component_i, component_j]),
-        }
-        for component_i, component_j in itertools.product(components, components)
-    ]
-
-
-def summarize_metrics(
-    frame: pd.DataFrame,
-    group_cols: list[str],
-    value_cols: list[str],
-) -> pd.DataFrame:
-    rows: list[dict[str, Any]] = []
-    grouped = frame.groupby(group_cols, dropna=False, sort=True)
-    for group_key, group in grouped:
-        if not isinstance(group_key, tuple):
-            group_key = (group_key,)
-        base = dict(zip(group_cols, group_key, strict=True))
-        for metric in value_cols:
-            values = group[metric].dropna().astype(float).to_numpy()
-            if len(values) == 0:
-                continue
-            p05, median, p95 = np.quantile(
-                values,
-                SUMMARY_QUANTILES,
-                method=MONTE_CARLO_BASELINE_QUANTILE_METHOD,
-            )
-            rows.append(
-                {
-                    **base,
-                    "metric": metric,
-                    "n_simulations": int(len(values)),
-                    "mean": float(np.mean(values)),
-                    "median": float(median),
-                    "std": float(np.std(values, ddof=1)) if len(values) > 1 else 0.0,
-                    "p05": float(p05),
-                    "p95": float(p95),
-                    "min": float(np.min(values)),
-                    "max": float(np.max(values)),
-                    "quantile_method": MONTE_CARLO_BASELINE_QUANTILE_METHOD,
-                }
-            )
-    return pd.DataFrame(rows)
-
-
-def compare_empirical_volatility(
-    empirical_csv: Path,
-    simulations: pd.DataFrame,
-    summary: pd.DataFrame,
-    k: int,
-) -> pd.DataFrame:
-    empirical = pd.read_csv(empirical_csv)
-    empirical = empirical[empirical["series"] == SERIES_FINAL].copy()
-    value_cols = [
-        ENERGY,
-        RMS_VOLATILITY,
-        ANNUALIZED_RMS_VOLATILITY,
-        DETAIL_ENERGY_SHARE,
-        TOTAL_COMPONENT_ENERGY_SHARE,
-    ]
-    return compare_empirical_metric_table(
-        empirical,
-        simulations,
-        summary,
-        index_cols=[
-            COMPONENT,
-            K,
-            COMPONENT_TYPE,
-            SCALE_MINUTES,
-            SCALE_DAYS,
-        ],
-        value_cols=value_cols,
-    )
-
-
-def compare_empirical_entropy(
-    empirical_csv: Path,
-    simulations: pd.DataFrame,
-    summary: pd.DataFrame,
-    k: int,
-) -> pd.DataFrame:
-    empirical = pd.read_csv(empirical_csv)
-    empirical = empirical[empirical["series"] == SERIES_FINAL].copy()
-    return compare_empirical_metric_table(
-        empirical,
-        simulations,
-        summary,
-        index_cols=[
-            COMPONENT,
-            K,
-            COMPONENT_TYPE,
-            SCALE_MINUTES,
-            SCALE_DAYS,
-            REPEAT_LENGTH,
-        ],
-        value_cols=[
-            EFFECTIVE_N,
-            ORDINAL_WINDOWS,
-            PERMUTATION_ENTROPY,
-            NORMALIZED_ENTROPY,
-        ],
-    )
-
-
-def compare_empirical_acf(
-    final_returns_csv: Path,
-    simulations: pd.DataFrame,
-    summary: pd.DataFrame,
-    return_acf_max_lag: int,
-    abs_return_acf_max_lag: int,
-) -> pd.DataFrame:
-    returns = pd.read_csv(final_returns_csv, usecols=[LOG_RETURN])
-    values = returns[LOG_RETURN].astype(float).to_numpy()
-    empirical = pd.DataFrame(
-        [
-            *(
-                {
-                    "acf_kind": "return",
-                    "lag": lag,
-                    "max_lag": return_acf_max_lag,
-                    "acf": float(value),
-                }
-                for lag, value in enumerate(
-                    autocorrelation(values, return_acf_max_lag),
-                    start=1,
-                )
-            ),
-            *(
-                {
-                    "acf_kind": "absolute_return",
-                    "lag": lag,
-                    "max_lag": abs_return_acf_max_lag,
-                    "acf": float(value),
-                }
-                for lag, value in enumerate(
-                    autocorrelation(np.abs(values), abs_return_acf_max_lag),
-                    start=1,
-                )
-            ),
-        ]
-    )
-    return compare_empirical_metric_table(
-        empirical,
-        simulations,
-        summary,
-        index_cols=["acf_kind", "lag", "max_lag"],
-        value_cols=["acf"],
-    )
-
-
-def compare_empirical_component_acf(
-    final_decomposition_csv: Path,
-    simulations: pd.DataFrame,
-    summary: pd.DataFrame,
-    k: int,
-    short_max_lag: int,
-    long_max_lag: int,
-) -> pd.DataFrame:
-    components = decomposition_components(k, include_original=False)
-    frame = pd.read_csv(final_decomposition_csv, usecols=components)
-    empirical = pd.DataFrame(
-        compute_component_acf_rows(
-            frame,
-            baseline_type=SERIES_FINAL,
-            simulation_id=0,
-            k=k,
-            short_max_lag=short_max_lag,
-            long_max_lag=long_max_lag,
-        )
-    )
-    return compare_empirical_metric_table(
-        empirical,
-        simulations,
-        summary,
-        index_cols=[
-            COMPONENT,
-            K,
-            COMPONENT_TYPE,
-            SCALE_MINUTES,
-            SCALE_DAYS,
-            "acf_kind",
-            "lag",
-            "compressed_lag",
-            "max_lag",
-        ],
-        value_cols=["acf"],
-    )
-
-
-def compare_empirical_abs_component_correlation(
-    final_decomposition_csv: Path,
-    simulations: pd.DataFrame,
-    summary: pd.DataFrame,
-    k: int,
-) -> pd.DataFrame:
-    components = decomposition_components(k, include_original=False)
-    frame = pd.read_csv(final_decomposition_csv, usecols=components)
-    corr = absolute_component_correlation(frame, components)
-    empirical = pd.DataFrame(
-        [
-            {
-                "component_i": component_i,
-                "component_j": component_j,
-                "correlation_abs": float(corr.loc[component_i, component_j]),
-            }
-            for component_i, component_j in itertools.product(components, components)
-        ]
-    )
-    return compare_empirical_metric_table(
-        empirical,
-        simulations,
-        summary,
-        index_cols=["component_i", "component_j"],
-        value_cols=["correlation_abs"],
-    )
-
-
-def compare_empirical_metric_table(
-    empirical: pd.DataFrame,
-    simulations: pd.DataFrame,
-    summary: pd.DataFrame,
-    index_cols: list[str],
-    value_cols: list[str],
-) -> pd.DataFrame:
-    empirical = normalize_comparison_keys(empirical, index_cols)
-    simulations = normalize_comparison_keys(simulations, index_cols)
-    summary = normalize_comparison_keys(summary, index_cols)
-    empirical_long = empirical.melt(
-        id_vars=index_cols,
-        value_vars=value_cols,
-        var_name="metric",
-        value_name="empirical_value",
-    ).dropna(subset=["empirical_value"])
-    simulations_long = simulations.melt(
-        id_vars=["baseline_type", "simulation_id", *index_cols],
-        value_vars=value_cols,
-        var_name="metric",
-        value_name="simulated_value",
-    ).dropna(subset=["simulated_value"])
-
-    keys = ["baseline_type", *index_cols, "metric"]
-    comparison = summary.merge(
-        empirical_long,
-        on=[*index_cols, "metric"],
-        how="inner",
-    )
-    joined = simulations_long.merge(
-        comparison[[*keys, "empirical_value"]],
-        on=keys,
-        how="inner",
-    )
-    ranks = (
-        joined.assign(le_empirical=joined["simulated_value"] <= joined["empirical_value"])
-        .groupby(keys, dropna=False)
-        .agg(
-            percentile_rank=("le_empirical", "mean"),
-            n_simulations=("simulated_value", "count"),
-        )
-        .reset_index()
-    )
-
-    output = comparison.merge(ranks, on=keys, how="inner")
-    if "n_simulations_y" in output.columns:
-        output["n_simulations"] = output["n_simulations_y"]
-        output = output.drop(
-            columns=[
-                column
-                for column in ["n_simulations_x", "n_simulations_y"]
-                if column in output.columns
-            ]
-        )
-    output = output.rename(
-        columns={
-            "median": "baseline_median",
-            "p05": "baseline_p05",
-            "p95": "baseline_p95",
-        }
-    )
-    output["difference_from_median"] = (
-        output["empirical_value"] - output["baseline_median"]
-    )
-    output["inside_envelope"] = (
-        (output["baseline_p05"] <= output["empirical_value"])
-        & (output["empirical_value"] <= output["baseline_p95"])
-    )
-    output["above_envelope"] = output["empirical_value"] > output["baseline_p95"]
-    output["below_envelope"] = output["empirical_value"] < output["baseline_p05"]
-    output["quantile_method"] = MONTE_CARLO_BASELINE_QUANTILE_METHOD
-
-    columns = [
-        "baseline_type",
-        *index_cols,
-        "metric",
-        "empirical_value",
-        "baseline_median",
-        "baseline_p05",
-        "baseline_p95",
-        "difference_from_median",
-        "percentile_rank",
-        "inside_envelope",
-        "above_envelope",
-        "below_envelope",
-        "n_simulations",
-        "quantile_method",
-    ]
-    return output[columns].sort_values(["baseline_type", *index_cols, "metric"])
-
-
-def normalize_comparison_keys(frame: pd.DataFrame, index_cols: list[str]) -> pd.DataFrame:
-    output = frame.copy()
-    for column in index_cols:
-        if column in output.columns and pd.api.types.is_float_dtype(output[column]):
-            output[column] = output[column].round(12)
-    return output
 

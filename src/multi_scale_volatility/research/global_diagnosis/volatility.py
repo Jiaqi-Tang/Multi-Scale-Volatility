@@ -48,6 +48,9 @@ from multi_scale_volatility.core.config.names import (
 from multi_scale_volatility.core.io import write_csv
 from multi_scale_volatility.core.io import write_json
 from multi_scale_volatility.core.utils.validation import require_finite_array, require_positive_k
+from multi_scale_volatility.app.runtime import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -101,6 +104,7 @@ def compute_volatility_metrics(
     require_positive_k(k)
 
     paths.output_dir.mkdir(parents=True, exist_ok=True)
+    logger.info("Computing volatility metrics into %s", paths.output_dir)
     annualization_periods = (
         TRADING_DAYS_PER_YEAR * TRADING_HOURS_PER_DAY * PERIODS_PER_HOUR
     )
@@ -134,6 +138,7 @@ def compute_volatility_metrics(
         "series": series_report,
     }
     write_json(paths.report_json, report)
+    logger.info("Wrote volatility metrics to %s", paths.output_csv)
     return report
 
 

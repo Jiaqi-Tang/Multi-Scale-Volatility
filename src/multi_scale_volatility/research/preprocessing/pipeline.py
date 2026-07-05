@@ -10,13 +10,17 @@ from multi_scale_volatility.research.preprocessing.raw import load_raw_1m
 from multi_scale_volatility.research.preprocessing.resampling import build_5m_ohlc
 from multi_scale_volatility.research.preprocessing.returns import build_clean_returns
 from multi_scale_volatility.core.reports import PreprocessingOutputs
+from multi_scale_volatility.app.runtime import get_logger
 from multi_scale_volatility.core.io import write_csv
 from multi_scale_volatility.core.io import write_json
+
+logger = get_logger(__name__)
 
 
 def run_preprocessing(paths: PreprocessingPaths | None = None) -> dict[str, Any]:
     paths = paths or PreprocessingPaths()
     paths.intermediate_dir.mkdir(parents=True, exist_ok=True)
+    logger.info("Preprocessing raw data from %s", paths.raw_dir)
 
     report: dict[str, Any] = {
         "asset": "EUR/USD",
@@ -48,4 +52,5 @@ def run_preprocessing(paths: PreprocessingPaths | None = None) -> dict[str, Any]
         report_json=paths.report_json,
     ).as_dict()
     write_json(paths.report_json, report)
+    logger.info("Wrote clean returns to %s", paths.clean_returns_csv)
     return report

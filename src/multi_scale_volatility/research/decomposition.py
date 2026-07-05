@@ -30,8 +30,10 @@ from multi_scale_volatility.core.config.schemas import RETURN_COLUMNS
 from multi_scale_volatility.core.io import write_csv
 from multi_scale_volatility.core.io import write_json
 from multi_scale_volatility.core.utils.validation import require_finite_array, require_positive_k
+from multi_scale_volatility.app.runtime import get_logger
 
 RECONSTRUCTION_TOLERANCE = 1e-12
+logger = get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -91,6 +93,7 @@ def run_decomposition(
     require_positive_k(k)
 
     paths.output_dir.mkdir(parents=True, exist_ok=True)
+    logger.info("Running empirical decomposition into %s", paths.output_dir)
     report: dict[str, Any] = {
         "K": k,
         "base_interval_minutes": BASE_INTERVAL_MINUTES,
@@ -105,6 +108,7 @@ def run_decomposition(
         report["series"][item.name] = decompose_csv(item, k=k)
 
     write_json(paths.report_json, report)
+    logger.info("Wrote decomposition report to %s", paths.report_json)
     return report
 
 

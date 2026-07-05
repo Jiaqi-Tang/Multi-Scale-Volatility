@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from concurrent.futures import ProcessPoolExecutor
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -28,8 +26,9 @@ from multi_scale_volatility.core.config.paths import (
     ROLLING_LAYER_VOLATILITY_CSV,
 )
 from multi_scale_volatility.research.decomposition import decompose_values
+from multi_scale_volatility.app.parallel import effective_worker_count, process_pool_map
 from multi_scale_volatility.core.io import write_csv, write_json
-from multi_scale_volatility.research.global_diagnosis.monte_carlo_metrics import (
+from multi_scale_volatility.research.global_diagnosis.monte_carlo_summaries import (
     compare_empirical_metric_table,
     summarize_metrics,
 )
@@ -114,7 +113,7 @@ def compute_rolling_baseline_correlations(
         (record, window_lengths, step_size, k)
         for record in audit.to_dict("records")
     ]
-    effective_max_workers = max_workers or min(4, os.cpu_count() or 1)
+    effective_max_workers = effective_worker_count(max_workers)
     tracker = RuntimeTracker(paths.runtime_log_csv, flush_every=RUNTIME_LOG_BATCH_SIZE)
     stage_timer = start_timer()
     rows: list[dict[str, Any]] = []
@@ -124,24 +123,24 @@ def compute_rolling_baseline_correlations(
         len(worker_args),
         effective_max_workers,
     )
-    with ProcessPoolExecutor(max_workers=effective_max_workers) as executor:
-        for index, result in enumerate(
-            executor.map(_rolling_baseline_worker, worker_args),
-            start=1,
-        ):
-            rows.extend(result.rows)
-            tracker.extend(
-                result.runtime_rows,
-                flush=index % RUNTIME_LOG_BATCH_SIZE == 0 or result.status != "success",
+    for index, result in process_pool_map(
+        _rolling_baseline_worker,
+        worker_args,
+        max_workers=max_workers,
+    ):
+        rows.extend(result.rows)
+        tracker.extend(
+            result.runtime_rows,
+            flush=index % RUNTIME_LOG_BATCH_SIZE == 0 or result.status != "success",
+        )
+        if result.status != "success":
+            raise RuntimeError(result.error_message)
+        if index % RUNTIME_LOG_BATCH_SIZE == 0:
+            logger.info(
+                "Computed rolling baseline correlations for %s/%s simulations",
+                index,
+                len(worker_args),
             )
-            if result.status != "success":
-                raise RuntimeError(result.error_message)
-            if index % RUNTIME_LOG_BATCH_SIZE == 0:
-                logger.info(
-                    "Computed rolling baseline correlations for %s/%s simulations",
-                    index,
-                    len(worker_args),
-                )
     tracker.flush()
 
     simulations = pd.DataFrame(rows)

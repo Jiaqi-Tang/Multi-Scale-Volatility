@@ -1,7 +1,7 @@
 {
   "K": 11,
   "base_interval_minutes": 5,
-  "output_csv": "results\\volatility\\layer_volatility.csv",
+  "output_csv": "results\\global_diagnosis\\volatility\\layer_volatility.csv",
   "series": [
     "final"
   ]

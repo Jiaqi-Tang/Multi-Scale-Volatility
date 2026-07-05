@@ -52,11 +52,13 @@ from multi_scale_volatility.core.config.schemas import ENTROPY_GAP_INDEX_COLUMNS
 from multi_scale_volatility.core.io import write_csv
 from multi_scale_volatility.core.io import write_json
 from multi_scale_volatility.core.utils.validation import require_finite_array, require_positive_k
+from multi_scale_volatility.app.runtime import get_logger
 
 EMBEDDING_DIMENSION = 3
 DELAY = 1
 JITTER_SEED = 314
 JITTER_MAGNITUDE = 1e-10
+logger = get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -128,6 +130,7 @@ def compute_entropy_metrics(
         raise ValueError("jitter_magnitude must be non-negative")
 
     paths.output_dir.mkdir(parents=True, exist_ok=True)
+    logger.info("Computing entropy metrics into %s", paths.output_dir)
 
     rows: list[dict[str, Any]] = []
     pattern_counts: dict[str, dict[str, dict[str, int]]] = {}
@@ -170,6 +173,7 @@ def compute_entropy_metrics(
         "pattern_counts": pattern_counts,
     }
     write_json(paths.report_json, report)
+    logger.info("Wrote entropy metrics to %s", paths.layer_entropy_csv)
     return report
 
 
