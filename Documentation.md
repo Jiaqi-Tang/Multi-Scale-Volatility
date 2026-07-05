@@ -1147,6 +1147,93 @@ be inspected after a full run.
 
 ---
 
+# Rolling Regime Diagnostics
+
+Objective: convert the V2.1 rolling metrics into an exploratory two-dimensional
+volatility-state map.
+
+For each window length, V2.3 uses:
+
+$$
+\sigma_{q,original}^{RMS,W}
+$$
+
+and:
+
+$$
+p_{q,fine}^{detail,W}
+=
+p_{q,D_1}^{detail,W}+p_{q,D_2}^{detail,W}+p_{q,D_3}^{detail,W}.
+$$
+
+Within each window length, percentile ranks are computed using:
+
+```text
+rank(method="average", pct=True)
+```
+
+The two state axes are:
+
+```text
+total_rms_percentile
+fine_share_percentile
+```
+
+Buckets use:
+
+```text
+low:  <= 0.20
+mid:  > 0.20 and < 0.80
+high: >= 0.80
+```
+
+Each rolling window receives a label:
+
+```text
+{lowVol, midVol, highVol}_{lowFine, midFine, highFine}
+```
+
+Examples:
+
+```text
+highVol_highFine
+highVol_midFine
+highVol_lowFine
+```
+
+Episodes are contiguous runs of windows with the same regime label. V2.3 keeps
+episodes with at least:
+
+```text
+3 consecutive rolling windows
+```
+
+This is an EDA persistence filter. Because rolling windows overlap, episode
+duration is measured in rolling steps, not independent samples.
+
+V2.3 also computes a trend ratio for each rolling window:
+
+$$
+\frac{\left|\sum_i r_i\right|}{\sum_i |r_i|}
+$$
+
+where the sums are over 5-minute log returns inside the rolling window.
+
+Regime outputs are saved under `results/rolling_window_diagnosis/regimes`:
+
+```text
+rolling_regime_metrics.csv
+regime_episode_summary.csv
+regime_cell_counts.csv
+regime_episode_counts.csv
+rolling_regime_report.json
+```
+
+The all-window count table records both counts and shares. The episode-count
+table records counts and shares after the minimum-duration filter.
+
+---
+
 # Plot Reference
 
 All return-series plots use observation index rather than timestamp on the
@@ -1751,6 +1838,46 @@ plots/results/rolling_window_diagnosis/rolling_baselines
 The `rms` and `energy_share` subfolders contain empirical rolling correlation
 matrices, shuffled and Gaussian baseline medians, empirical-minus-median
 matrices, and outside-envelope indicators for the rolling baseline comparisons.
+
+**Rolling regime plots**
+
+Folder:
+
+```text
+plots/results/rolling_window_diagnosis/regimes
+```
+
+```text
+regime_scatter_percentile_2048.png
+regime_scatter_percentile_8192.png
+regime_scatter_raw_rms_2048.png
+regime_scatter_raw_rms_8192.png
+regime_cell_counts_2048.png
+regime_cell_counts_8192.png
+regime_total_rms_summary_2048.png
+regime_total_rms_summary_8192.png
+regime_fine_share_summary_2048.png
+regime_fine_share_summary_8192.png
+regime_episode_duration_summary_2048.png
+regime_episode_duration_summary_8192.png
+total_rms_with_highvol_regimes_2048.png
+total_rms_with_highvol_regimes_8192.png
+raw_price_with_highvol_regimes_2048.png
+raw_price_with_highvol_regimes_8192.png
+raw_price_with_lowvol_regimes_2048.png
+raw_price_with_lowvol_regimes_8192.png
+trend_ratio_with_highvol_regimes_2048.png
+trend_ratio_with_highvol_regimes_8192.png
+regime_average_rms_profiles_2048.png
+regime_average_rms_profiles_8192.png
+regime_average_energy_share_profiles_2048.png
+regime_average_energy_share_profiles_8192.png
+```
+
+The scatter plots show the two-dimensional regime map. Heatmaps show all-window
+counts, RMS/fine-share summaries, and average filtered-episode duration. Line
+plots show total RMS, raw EUR/USD close, or trend ratio with selected regime
+episodes shaded.
 
 ## Memo Plots
 

@@ -1,9 +1,9 @@
 # Multi-Scale Volatility Structure in EUR/USD Returns
 
-Current version: **V2.1**. The V1.1 global Monte Carlo baseline pipeline is retained.
+Current version: **V2.3**. The V1.1 global Monte Carlo baseline pipeline is retained.
 
-V2.1 adds fixed-observation rolling diagnostics and rolling baseline correlation
-envelopes on top of the V1.1 global analysis.
+V2.3 adds rolling volatility-state regime diagnostics on top of the V2.1 rolling
+metrics and rolling baseline correlation envelopes.
 
 - `Memo.md` - concise research summary and findings
 - `Documentation.md` - exact preprocessing, decomposition, metric, rolling, and baseline-envelope definitions
@@ -25,9 +25,9 @@ The primary goal is to identify whether real FX volatility exhibits
 scale-dependent structure beyond heavy tails or independent noise alone.
 
 The global V1.1 analysis is a minimalist full-sample exploration. V2.1 adds
-rolling windows to inspect time-local volatility structure. The project still
-does not include forecasting, regime classification, event studies, or trading
-rules.
+rolling windows to inspect time-local volatility structure. V2.3 adds
+exploratory regime-style diagnostics. The project still does not include
+forecasting, event studies, formal regime modeling, or trading rules.
 
 ## Key Findings
 
@@ -38,6 +38,7 @@ rules.
   explained by the shuffled baseline envelope.
 - Rolling windows expose time-local shifts in fine, mid, and coarse volatility
   share structure.
+- Rolling regime maps separate volatility level from scale-composition state.
 - Absolute-return autocorrelation confirms strong volatility clustering.
 - Permutation entropy differences remain comparatively weak under the current
   specification.
@@ -99,6 +100,13 @@ ve rolling-baselines
 ve plot rolling-baselines
 ```
 
+Run V2.3 rolling regime diagnostics:
+
+```powershell
+ve rolling-regimes
+ve plot rolling-regimes
+```
+
 ## Repository Structure
 
 ```text
@@ -157,7 +165,7 @@ README.md
 
 ## Current Status
 
-V2.1 complete:
+V2.3 complete:
 
 - preprocessing pipeline,
 - dyadic decomposition,
@@ -167,7 +175,8 @@ V2.1 complete:
 - cross-scale correlation analysis,
 - fixed-observation rolling decompositions,
 - rolling RMS and energy-share diagnostics,
-- rolling baseline correlation-envelope comparisons.
+- rolling baseline correlation-envelope comparisons,
+- rolling volatility-state regime diagnostics.
 
 Currently exploring:
 
