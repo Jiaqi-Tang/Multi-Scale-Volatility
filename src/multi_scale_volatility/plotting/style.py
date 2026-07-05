@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import matplotlib
 
-from multi_scale_volatility.config.names import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_SHUFFLE
+from multi_scale_volatility.core.config.names import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_SHUFFLE
 
 matplotlib.use("Agg")
 

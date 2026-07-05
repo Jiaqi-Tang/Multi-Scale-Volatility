@@ -10,10 +10,10 @@ import numpy as np
 import pandas as pd
 import math
 
-from multi_scale_volatility.config.names import DEFAULT_K
-from multi_scale_volatility.config.names import COMPONENT, COMPONENT_TYPE, INDEX, SERIES
-from multi_scale_volatility.config.names import DETAIL_ENERGY_SHARE, NORMALIZED_ENTROPY
-from multi_scale_volatility.config.paths import (
+from multi_scale_volatility.core.config.names import DEFAULT_K
+from multi_scale_volatility.core.config.names import COMPONENT, COMPONENT_TYPE, INDEX, SERIES
+from multi_scale_volatility.core.config.names import DETAIL_ENERGY_SHARE, NORMALIZED_ENTROPY
+from multi_scale_volatility.core.config.paths import (
     FINAL_DECOMPOSITION_CSV,
     FINAL_RETURNS_CSV,
     GAUSSIAN_RETURNS_CSV,
@@ -23,8 +23,8 @@ from multi_scale_volatility.config.paths import (
     SHUFFLE_DECOMPOSITION_CSV,
     VOLATILITY_CSV,
 )
-from multi_scale_volatility.config.names import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_SHUFFLE
-from multi_scale_volatility.io import (
+from multi_scale_volatility.core.config.names import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_SHUFFLE
+from multi_scale_volatility.core.io import (
     read_decomposition,
     read_layer_entropy,
     read_returns,
@@ -39,14 +39,14 @@ from multi_scale_volatility.plotting.style import (
     GAUSSIAN_DARK_COLOR,
     SHUFFLE_COLOR,
 )
-from multi_scale_volatility.stats import (
+from multi_scale_volatility.core.stats import (
     absolute_component_correlation,
     absolute_component_correlation_difference,
     autocorrelation,
     normal_quantiles_for_values,
 )
-from multi_scale_volatility.utils.validation import require_positive_k
-from multi_scale_volatility.components import decomposition_components
+from multi_scale_volatility.core.utils.validation import require_positive_k
+from multi_scale_volatility.core.components import decomposition_components
 
 
 @dataclass(frozen=True)

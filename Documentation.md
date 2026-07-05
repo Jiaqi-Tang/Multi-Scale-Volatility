@@ -202,25 +202,25 @@ of consecutive log returns on 5m data.
 ## Output datasets
 
 Preprocessing outputs are intermediate datasets and can be found in the
-`data/intermediate` folder:
+`data/processed` folder:
 
 ```text
-data/intermediate/eurusd_1m_utc_clean.csv
-data/intermediate/eurusd_5m_ohlc_utc_nonempty.csv
-data/intermediate/eurusd_5m_log_returns_clean.csv
-data/intermediate/preprocessing_report.json
+data/processed/eurusd_1m_utc_clean.csv
+data/processed/eurusd_5m_ohlc_utc_nonempty.csv
+data/processed/eurusd_5m_log_returns_clean.csv
+data/processed/preprocessing_report.json
 ```
 
 The clean 5-minute return dataset contains `timestamp_utc, close, log_return, previous_timestamp_utc, previous_close, delta_minutes, n_m1`, where `n_m1` records the number of observed 1-minute bars used to construct the current 5-minute close bar.
 
 Dropped returns are not exported as a separate dataset. They are recorded only for
-debugging and audit purposes in `data/intermediate/preprocessing_report.json`.
+debugging and audit purposes in `data/processed/preprocessing_report.json`.
 
 The final analysis dataset will be produced after length standardization and saved
 as:
 
 ```text
-data/final/eurusd_5m_log_returns_final.csv
+data/processed/eurusd_5m_log_returns_final.csv
 ```
 
 **Preprocessing Results**
@@ -300,9 +300,9 @@ Dropped tail timestamp range: `2025-12-30 06:30 UTC to 2025-12-31 21:55 UTC`
 
 Final standardized timestamp range: `2016-01-03 22:05 UTC to 2025-12-30 06:25 UTC`
 
-The standardized final dataset is saved as: `data/final/eurusd_5m_log_returns_final.csv`
+The standardized final dataset is saved as: `data/processed/eurusd_5m_log_returns_final.csv`
 
-The truncation report is saved as: `data/final/truncation_report.json`
+The truncation report is saved as: `data/processed/truncation_report.json`
 
 For $R^{\ast}$:
 
@@ -380,9 +380,9 @@ Property destroyed:
 Output:
 
 ```text
-data/monte_carlo_baselines/returns/shuffle/shuffle_sim_000.parquet
+data/derived/monte_carlo_baselines/returns/shuffle/shuffle_sim_000.parquet
 ...
-data/monte_carlo_baselines/returns/shuffle/shuffle_sim_099.parquet
+data/derived/monte_carlo_baselines/returns/shuffle/shuffle_sim_099.parquet
 ```
 
 ## Gaussian Baselines
@@ -420,9 +420,9 @@ Properties targeted:
 Output:
 
 ```text
-data/monte_carlo_baselines/returns/gaussian/gaussian_sim_000.parquet
+data/derived/monte_carlo_baselines/returns/gaussian/gaussian_sim_000.parquet
 ...
-data/monte_carlo_baselines/returns/gaussian/gaussian_sim_099.parquet
+data/derived/monte_carlo_baselines/returns/gaussian/gaussian_sim_099.parquet
 ```
 
 ## Baseline Decompositions
@@ -432,17 +432,17 @@ decomposition as the empirical series. The decomposition files are saved as
 Parquet:
 
 ```text
-data/monte_carlo_baselines/decomposition/shuffle/shuffle_decomposition_sim_000.parquet
+data/derived/monte_carlo_baselines/decomposition/shuffle/shuffle_decomposition_sim_000.parquet
 ...
-data/monte_carlo_baselines/decomposition/gaussian/gaussian_decomposition_sim_099.parquet
+data/derived/monte_carlo_baselines/decomposition/gaussian/gaussian_decomposition_sim_099.parquet
 ```
 
 The baseline audit and configuration files are:
 
 ```text
-results/monte_carlo_baselines/baseline_simulation_audit.csv
-results/monte_carlo_baselines/monte_carlo_config.json
-results/monte_carlo_baselines/runtime_log.csv
+results/global_diagnosis/monte_carlo_baselines/baseline_simulation_audit.csv
+results/global_diagnosis/monte_carlo_baselines/monte_carlo_config.json
+results/global_diagnosis/monte_carlo_baselines/runtime_log.csv
 ```
 
 The audit table records baseline type, simulation id, seed, length, realized
@@ -542,15 +542,15 @@ approximation layers $A_1,\ldots,A_{10}$ are computed internally but not exporte
 The empirical decomposition output is:
 
 ```text
-data/decomposition/final_decomposition.csv
-data/decomposition/decomposition_report.json
+data/derived/decomposition/final_decomposition.csv
+data/derived/decomposition/decomposition_report.json
 ```
 
 Monte Carlo decomposition outputs are saved as Parquet under:
 
 ```text
-data/monte_carlo_baselines/decomposition/shuffle/
-data/monte_carlo_baselines/decomposition/gaussian/
+data/derived/monte_carlo_baselines/decomposition/shuffle/
+data/derived/monte_carlo_baselines/decomposition/gaussian/
 ```
 
 ## Validation
@@ -577,7 +577,7 @@ final:
 ```
 
 Monte Carlo reconstruction errors are recorded per simulation in
-`results/monte_carlo_baselines/baseline_simulation_audit.csv`.
+`results/global_diagnosis/monte_carlo_baselines/baseline_simulation_audit.csv`.
 
 ---
 
@@ -596,7 +596,7 @@ $$
 
 for $R^{\ast}$. The same volatility metrics are computed for every Monte Carlo
 baseline decomposition and summarized separately in
-`results/monte_carlo_baselines`.
+`results/global_diagnosis/monte_carlo_baselines`.
 
 Let a decomposition component be:
 
@@ -655,11 +655,11 @@ The mean of every component is recorded in the report for audit purposes.
 
 ## Outputs
 
-Volatility outputs are saved under `results/volatility`:
+Volatility outputs are saved under `results/global_diagnosis/volatility`:
 
 ```text
-results/volatility/layer_volatility.csv
-results/volatility/volatility_report.json
+results/global_diagnosis/volatility/layer_volatility.csv
+results/global_diagnosis/volatility/volatility_report.json
 ```
 
 The empirical volatility CSV has one row per component:
@@ -731,7 +731,7 @@ $$
 
 for $R^{\ast}$. The same entropy calculation is run for every Monte Carlo
 baseline decomposition and summarized separately in
-`results/monte_carlo_baselines`.
+`results/global_diagnosis/monte_carlo_baselines`.
 
 The embedding dimension and delay are:
 
@@ -801,11 +801,11 @@ $$
 
 ## Outputs
 
-Entropy outputs are saved under `results/entropy`:
+Entropy outputs are saved under `results/global_diagnosis/entropy`:
 
 ```text
-results/entropy/layer_entropy.csv
-results/entropy/entropy_report.json
+results/global_diagnosis/entropy/layer_entropy.csv
+results/global_diagnosis/entropy/entropy_report.json
 ```
 
 The empirical entropy CSV has one row per component:
@@ -836,7 +836,7 @@ $$
 \text{scale\_minutes}(A_{11}) = 5 \times 2^{11}
 $$
 
-Ordinal pattern counts are recorded in `results/entropy/entropy_report.json`.
+Ordinal pattern counts are recorded in `results/global_diagnosis/entropy/entropy_report.json`.
 
 ## Results
 
@@ -873,7 +873,7 @@ diagnostics against the simulated baseline distributions.
 
 Every baseline simulation is run through the same metric calculations as the
 empirical series. Simulation-level outputs are saved under
-`results/monte_carlo_baselines`:
+`results/global_diagnosis/monte_carlo_baselines`:
 
 ```text
 layer_volatility_simulations.csv
@@ -965,7 +965,7 @@ abs_component_correlation_empirical_comparison.csv
 Full pipeline timing is recorded in:
 
 ```text
-results/monte_carlo_baselines/runtime_log.csv
+results/global_diagnosis/monte_carlo_baselines/runtime_log.csv
 ```
 
 Monte Carlo metric timings are split into reading, volatility, entropy, return
@@ -1068,7 +1068,7 @@ up to floating-point tolerance.
 
 ## Outputs
 
-Rolling outputs are saved under `results/rolling`:
+Rolling outputs are saved under `results/rolling_window_diagnosis/rolling_metrics`:
 
 ```text
 rolling_window_metadata.csv
@@ -1131,7 +1131,7 @@ outside_envelope
 These are Monte Carlo envelopes for rolling correlation structure, not formal
 hypothesis tests.
 
-Rolling baseline outputs are saved under `results/rolling_baselines`:
+Rolling baseline outputs are saved under `results/rolling_window_diagnosis/rolling_baselines`:
 
 ```text
 rolling_correlation_simulations.csv
@@ -1159,7 +1159,7 @@ version.
 Folder:
 
 ```text
-plots/results/data_eda/returns
+plots/results/global_diagnosis/data_eda/returns
 ```
 
 **Return line plots**
@@ -1287,7 +1287,7 @@ Monte Carlo baseline medians with 5-95% envelopes.
 Folder:
 
 ```text
-plots/results/data_eda/decomposition
+plots/results/global_diagnosis/data_eda/decomposition
 ```
 
 Let:
@@ -1412,7 +1412,7 @@ Gaussian Monte Carlo baseline medians with 5-95% envelopes.
 Folder:
 
 ```text
-plots/results/global_data/correlation
+plots/results/global_diagnosis/correlation
 ```
 
 ```text
@@ -1451,7 +1451,7 @@ baseline 5-95% envelope.
 Folder:
 
 ```text
-plots/results/global_data/volatility
+plots/results/global_diagnosis/volatility
 ```
 
 All volatility plots use categorical component x-axis.
@@ -1550,7 +1550,7 @@ $$
 Folder:
 
 ```text
-plots/results/global_data/entropy
+plots/results/global_diagnosis/entropy
 ```
 
 All entropy plots use categorical component x-axis.
@@ -1647,11 +1647,11 @@ $$
 Folder:
 
 ```text
-plots/results/rolling_windows
+plots/results/rolling_window_diagnosis
 ```
 
 Rolling plots use rolling window index on the x-axis. Window metadata in
-`results/rolling/rolling_window_metadata.csv` can be used to map a window back
+`results/rolling_window_diagnosis/rolling_metrics/rolling_window_metadata.csv` can be used to map a window back
 to its start and end timestamps.
 
 **Total volatility plots**
@@ -1673,7 +1673,7 @@ $$
 Folder:
 
 ```text
-plots/results/rolling_windows/rms
+plots/results/rolling_window_diagnosis/rms
 ```
 
 ```text
@@ -1702,7 +1702,7 @@ for the raw RMS heatmaps.
 Folder:
 
 ```text
-plots/results/rolling_windows/energy_share
+plots/results/rolling_window_diagnosis/energy_share
 ```
 
 ```text
@@ -1733,7 +1733,7 @@ $$
 Folder:
 
 ```text
-plots/results/rolling_windows/examples
+plots/results/rolling_window_diagnosis/examples
 ```
 
 Example plots show all rolling decomposition scales for selected windows,
@@ -1745,7 +1745,7 @@ and random EDA windows.
 Folder:
 
 ```text
-plots/results/rolling_windows/baselines
+plots/results/rolling_window_diagnosis/rolling_baselines
 ```
 
 The `rms` and `energy_share` subfolders contain empirical rolling correlation

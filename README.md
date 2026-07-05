@@ -104,38 +104,51 @@ ve plot rolling-baselines
 ```text
 src/
   multi_scale_volatility/
-    config/
+    app/
+    core/
+      config/
+      io/
+      stats/
+      utils/
     plotting/
-    preprocessing/
-    stats/
-    utils/
+    research/
+      preprocessing/
+      global_diagnosis/
+      rolling_window_diagnosis/
 
 data/
   raw/
-  intermediate/
-  final/
-  decomposition/
-  monte_carlo_baselines/
-    returns/
+  processed/
+  derived/
     decomposition/
+    monte_carlo_baselines/
+      returns/
+      decomposition/
 
 results/
-  volatility/
-  entropy/
-  monte_carlo_baselines/
-  rolling/
-  rolling_baselines/
+  global_diagnosis/
+    volatility/
+    entropy/
+    monte_carlo_baselines/
+  rolling_window_diagnosis/
+    rolling_metrics/
+    rolling_baselines/
+    regimes/
 
 plots/
   memo/
   results/
-    data_eda/
-    global_data/
-    rolling_windows/
+    global_diagnosis/
+      data_eda/
+      volatility/
+      entropy/
+      correlation/
+    rolling_window_diagnosis/
       rms/
       energy_share/
       examples/
-      baselines/
+      rolling_baselines/
+      regimes/
 
 Documentation.md
 Memo.md

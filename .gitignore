@@ -2,16 +2,14 @@
 .venv/
 
 # Data
-data/intermediate/*.csv
-data/decomposition/*.csv
+data/derived/**/*.csv
+data/processed/**/*.csv
+
+# Parquet
+*.parquet
 
 # Baselines
-results/monte_carlo_baselines/*.csv
-
-# smoke
-plots/results/rolling_windows/baselines_smoke/
-results/rolling_baselines_smoke/
-results/rolling_baselines_logging_smoke/
+results/global_diagnosis/monte_carlo_baselines/*.csv
 
 # Python
 __pycache__/
@@ -24,5 +22,3 @@ plan/
 # Archive
 archive/
 
-# Parquet
-*.parquet

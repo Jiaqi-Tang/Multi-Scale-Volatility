@@ -15,7 +15,7 @@ from multi_scale_volatility.plotting.style import (
     GAUSSIAN_COLOR,
     GAUSSIAN_DARK_COLOR,
 )
-from multi_scale_volatility.stats import ecdf
+from multi_scale_volatility.core.stats import ecdf
 
 
 def plot_histogram_comparison(

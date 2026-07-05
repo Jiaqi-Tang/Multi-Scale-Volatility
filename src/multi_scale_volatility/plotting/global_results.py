@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from multi_scale_volatility.config.names import COMPONENT, COMPONENT_TYPE, LOG_RETURN
-from multi_scale_volatility.config.names import DEFAULT_K
-from multi_scale_volatility.config.names import (
+from multi_scale_volatility.core.config.names import COMPONENT, COMPONENT_TYPE, LOG_RETURN
+from multi_scale_volatility.core.config.names import DEFAULT_K
+from multi_scale_volatility.core.config.names import (
     ANNUALIZED_RMS_VOLATILITY,
     DETAIL_ENERGY_SHARE,
     NORMALIZED_ENTROPY,
@@ -20,7 +20,7 @@ from multi_scale_volatility.config.names import (
     RMS_VOLATILITY,
     TOTAL_COMPONENT_ENERGY_SHARE,
 )
-from multi_scale_volatility.config.paths import (
+from multi_scale_volatility.core.config.paths import (
     DATA_EDA_DECOMPOSITION_PLOTS_DIR,
     DATA_EDA_RETURNS_PLOTS_DIR,
     FINAL_DECOMPOSITION_CSV,
@@ -53,9 +53,9 @@ from multi_scale_volatility.plotting.style import (
     GAUSSIAN_COLOR,
     SHUFFLE_COLOR,
 )
-from multi_scale_volatility.components import decomposition_components
-from multi_scale_volatility.stats import absolute_component_correlation, autocorrelation
-from multi_scale_volatility.utils.validation import require_positive_k
+from multi_scale_volatility.core.components import decomposition_components
+from multi_scale_volatility.core.stats import absolute_component_correlation, autocorrelation
+from multi_scale_volatility.core.utils.validation import require_positive_k
 
 
 @dataclass(frozen=True)

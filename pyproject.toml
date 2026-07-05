@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.scripts]
-ve = "multi_scale_volatility.cli:main"
+ve = "multi_scale_volatility.app.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

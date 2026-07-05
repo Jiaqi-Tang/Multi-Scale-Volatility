@@ -9,7 +9,7 @@ import numpy as np
 
 from multi_scale_volatility.plotting.save import save_figure
 from multi_scale_volatility.plotting.style import FIGURE_DPI, FINAL_COLOR
-from multi_scale_volatility.stats import normal_quantiles_for_values
+from multi_scale_volatility.core.stats import normal_quantiles_for_values
 
 
 def plot_qq_against_zero_mean_gaussian(
