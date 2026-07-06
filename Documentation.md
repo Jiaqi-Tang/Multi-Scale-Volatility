@@ -1996,7 +1996,5 @@ and raw EUR/USD close with high-volatility regime episodes shaded.
 The high-volatility regime labels are:
 
 $$
-\text{highVol\_lowFine},\quad
-\text{highVol\_midFine},\quad
-\text{highVol\_highFine}
+\text{highVol\_lowFine},\quad \text{highVol\_midFine},\quad \text{highVol\_highFine}
 $$

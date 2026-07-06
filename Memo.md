@@ -69,31 +69,19 @@ where $S$ is the rolling step size. $W=2048$ corresponds to roughly $7$ trading 
 For each window $q$, component RMS volatility is computed as:
 
 $$
-\sigma_{q,k}^{RMS,W}
-=
-\sqrt{\frac{1}{W}\sum_{t \in q} \left(D_{k,t}^{(q,W)}\right)^2}.
+\sigma_{q,k}^{RMS,W} = \sqrt{\frac{1}{W}\sum_{t \in q} \left(D_{k,t}^{(q,W)}\right)^2}.
 $$
 
 Grouped detail energy shares are computed over three scale groups:
 
 $$
-\mathcal{G}_{fine}=\{D_1,D_2,D_3\},
-\quad
-\mathcal{G}_{mid}=\{D_4,D_5,D_6\},
-\quad
-\mathcal{G}_{coarse}=\{D_7,D_8,D_9\}.
+\mathcal{G}_{fine}=\{D_1,D_2,D_3\}, \quad \mathcal{G}_{mid}=\{D_4,D_5,D_6\}, \quad \mathcal{G}_{coarse}=\{D_7,D_8,D_9\}.
 $$
 
 For group $g$, the grouped detail energy share is:
 
 $$
-p_{q,g}^{detail,W}
-=
-\frac{
-\sum_{D_k\in \mathcal{G}_g} E(D_{q,k}^{(W)})
-}{
-\sum_{j=1}^{9} E(D_{q,j}^{(W)})
-}.
+p_{q,g}^{detail,W} = \frac{\sum_{D_k\in \mathcal{G}_g} E(D_{q,k}^{(W)})}{\sum_{j=1}^{9} E(D_{q,j}^{(W)})}.
 $$
 
 These rolling diagnostics allow volatility level and scale composition to be studied separately.
@@ -164,7 +152,7 @@ This suggests that major volatility regimes are primarily changes in volatility 
 
 The near-zero correlations between total RMS volatility and grouped energy shares show that volatility level and scale composition are distinct diagnostics. A high-volatility window is not mechanically more fine-concentrated or more coarse-concentrated.
 
-| Window length | Corr(total RMS, fine share) | Corr(total RMS, mid share) | Corr(total RMS, coarse share) |
+| Window length | Total RMS vs fine share | Total RMS vs mid share | Total RMS vs coarse share |
 | ------------: | --------------------------: | -------------------------: | ----------------------------: |
 |      $W=2048$ |                      -0.025 |                      0.020 |                         0.026 |
 |      $W=8192$ |                       0.003 |                     -0.005 |                         0.005 |

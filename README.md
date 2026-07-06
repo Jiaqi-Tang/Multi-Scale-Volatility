@@ -23,8 +23,6 @@ The project is intentionally minimalist: it does not use forecasting models, opt
 
 ## Key Findings
 
-## Key Findings
-
 - **Rolling RMS volatility synchronizes strongly across scales:** High-volatility periods tend to raise RMS across many detail components simultaneously.
 - **Scale composition is comparatively stable:** Fine-scale detail energy dominates through time, while mid and coarse shares fluctuate within narrower ranges.
 - **Volatility level and scale composition are distinct.** Total RMS volatility is nearly uncorrelated with fine/mid/coarse energy shares.
