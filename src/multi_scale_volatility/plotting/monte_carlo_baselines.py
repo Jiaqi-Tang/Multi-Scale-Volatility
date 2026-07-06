@@ -21,13 +21,11 @@ from multi_scale_volatility.config.names import (
     TOTAL_COMPONENT_ENERGY_SHARE,
 )
 from multi_scale_volatility.config.paths import (
-    DATA_EDA_DECOMPOSITION_PLOTS_DIR,
-    DATA_EDA_RETURNS_PLOTS_DIR,
+    DECOMPOSITION_PLOTS_DIR,
+    EDA_PLOTS_DIR,
+    ENTROPY_PLOTS_DIR,
     FINAL_DECOMPOSITION_CSV,
     FINAL_RETURNS_CSV,
-    GLOBAL_CORRELATION_PLOTS_DIR,
-    GLOBAL_ENTROPY_PLOTS_DIR,
-    GLOBAL_VOLATILITY_PLOTS_DIR,
     MC_ABS_COMPONENT_CORRELATION_EMPIRICAL_COMPARISON_CSV,
     MC_ABS_COMPONENT_CORRELATION_SUMMARY_CSV,
     MC_ACF_EMPIRICAL_COMPARISON_CSV,
@@ -41,6 +39,7 @@ from multi_scale_volatility.config.paths import (
     MEMO_PLOTS_DIR,
     MONTE_CARLO_BASELINE_AUDIT_CSV,
     MONTE_CARLO_BASELINES_RESULTS_DIR,
+    VOLATILITY_PLOTS_DIR,
 )
 from multi_scale_volatility.plotting.memo import (
     plot_memo_decomposition_example,
@@ -64,12 +63,12 @@ class MonteCarloBaselinePlotPaths:
     audit_csv: Path = MONTE_CARLO_BASELINE_AUDIT_CSV
     final_returns_csv: Path = FINAL_RETURNS_CSV
     final_decomposition_csv: Path = FINAL_DECOMPOSITION_CSV
-    decomposition_output_dir: Path = DATA_EDA_DECOMPOSITION_PLOTS_DIR
-    volatility_output_dir: Path = GLOBAL_VOLATILITY_PLOTS_DIR
-    entropy_output_dir: Path = GLOBAL_ENTROPY_PLOTS_DIR
-    eda_output_dir: Path = DATA_EDA_RETURNS_PLOTS_DIR
+    decomposition_output_dir: Path = DECOMPOSITION_PLOTS_DIR
+    volatility_output_dir: Path = VOLATILITY_PLOTS_DIR
+    entropy_output_dir: Path = ENTROPY_PLOTS_DIR
+    eda_output_dir: Path = EDA_PLOTS_DIR
     memo_output_dir: Path = MEMO_PLOTS_DIR
-    correlation_output_dir: Path = GLOBAL_CORRELATION_PLOTS_DIR
+    correlation_output_dir: Path = Path("plots/results/correlation")
 
     @property
     def volatility_summary_csv(self) -> Path:

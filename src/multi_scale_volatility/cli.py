@@ -34,13 +34,6 @@ from multi_scale_volatility.config.paths import (
     MONTE_CARLO_BASELINES_DATA_DIR,
     MONTE_CARLO_BASELINES_RESULTS_DIR,
     RAW_METATRADER_DIR,
-    ROLLING_BASELINE_RESULTS_DIR,
-    ROLLING_BASELINE_RUNTIME_LOG_CSV,
-    ROLLING_BASELINE_PLOTS_DIR,
-    ROLLING_REGIME_PLOTS_DIR,
-    ROLLING_REGIME_RESULTS_DIR,
-    ROLLING_WINDOWS_PLOTS_DIR,
-    ROLLING_RESULTS_DIR,
     SHUFFLE_DECOMPOSITION_CSV,
     SHUFFLE_RETURNS_CSV,
     TRUNCATION_REPORT_JSON,
@@ -54,43 +47,13 @@ from multi_scale_volatility.monte_carlo_metrics import (
     compute_monte_carlo_metrics,
 )
 from multi_scale_volatility.pipeline import PipelineOptions, run_all, run_core_pipeline, run_plot_pipeline
-from multi_scale_volatility.plotting.global_results import (
+from multi_scale_volatility.plotting.monte_carlo_baselines import (
     MonteCarloBaselinePlotPaths,
     create_monte_carlo_baseline_plots,
     create_v11_memo_plots,
 )
-from multi_scale_volatility.plotting.rolling import (
-    RollingExamplePlotPaths,
-    RollingPlotPaths,
-    create_rolling_plots,
-    create_rolling_example_decomposition_plots,
-)
-from multi_scale_volatility.plotting.rolling_baselines import (
-    RollingBaselinePlotPaths,
-    create_rolling_baseline_plots,
-)
-from multi_scale_volatility.plotting.rolling_regimes import (
-    RollingRegimePlotPaths,
-    create_rolling_regime_plots,
-)
 from multi_scale_volatility.preprocessing import PreprocessingPaths, run_preprocessing
 from multi_scale_volatility.runtime import configure_logging
-from multi_scale_volatility.rolling import (
-    ROLLING_K,
-    ROLLING_STEP_SIZE,
-    ROLLING_WINDOW_LENGTHS,
-    RollingPaths,
-    compute_rolling_decomposition_diagnostics,
-)
-from multi_scale_volatility.rolling_baselines import (
-    RollingBaselineCorrelationPaths,
-    compute_rolling_baseline_correlations,
-)
-from multi_scale_volatility.rolling_regimes import (
-    MIN_EPISODE_WINDOWS,
-    RollingRegimePaths,
-    compute_rolling_regime_diagnostics,
-)
 from multi_scale_volatility.volatility import VolatilityPaths, compute_volatility_metrics
 
 
@@ -121,9 +84,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_entropy(subparsers)
     _add_monte_carlo_metrics(subparsers)
     _add_monte_carlo_comparisons(subparsers)
-    _add_rolling(subparsers)
-    _add_rolling_baselines(subparsers)
-    _add_rolling_regimes(subparsers)
     _add_plot(subparsers)
     _add_run_all(subparsers)
 
@@ -238,59 +198,6 @@ def _add_monte_carlo_comparisons(
     parser.set_defaults(handler=_handle_monte_carlo_comparisons)
 
 
-def _add_rolling(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
-    parser = subparsers.add_parser(
-        "rolling",
-        help="Create V2.1 rolling window decomposition diagnostics.",
-    )
-    parser.add_argument("--input-csv", type=Path, default=FINAL_RETURNS_CSV)
-    parser.add_argument("--output-dir", type=Path, default=ROLLING_RESULTS_DIR)
-    parser.add_argument("--window-lengths", type=int, nargs="+", default=list(ROLLING_WINDOW_LENGTHS))
-    parser.add_argument("--step-size", type=int, default=ROLLING_STEP_SIZE)
-    parser.add_argument("--k", type=int, default=ROLLING_K)
-    parser.set_defaults(handler=_handle_rolling)
-
-
-def _add_rolling_baselines(
-    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
-) -> None:
-    parser = subparsers.add_parser(
-        "rolling-baselines",
-        help="Create rolling correlation envelopes for Monte Carlo baselines.",
-    )
-    parser.add_argument("--audit-csv", type=Path, default=MONTE_CARLO_BASELINE_AUDIT_CSV)
-    parser.add_argument(
-        "--empirical-layer-volatility-csv",
-        type=Path,
-        default=ROLLING_RESULTS_DIR / "rolling_layer_volatility.csv",
-    )
-    parser.add_argument("--output-dir", type=Path, default=ROLLING_BASELINE_RESULTS_DIR)
-    parser.add_argument(
-        "--runtime-log-csv",
-        type=Path,
-        default=ROLLING_BASELINE_RUNTIME_LOG_CSV,
-    )
-    parser.add_argument("--window-lengths", type=int, nargs="+", default=list(ROLLING_WINDOW_LENGTHS))
-    parser.add_argument("--step-size", type=int, default=ROLLING_STEP_SIZE)
-    parser.add_argument("--k", type=int, default=ROLLING_K)
-    parser.add_argument("--max-workers", type=int, default=None)
-    parser.add_argument("--max-simulations-per-type", type=int, default=None)
-    parser.set_defaults(handler=_handle_rolling_baselines)
-
-
-def _add_rolling_regimes(
-    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
-) -> None:
-    parser = subparsers.add_parser(
-        "rolling-regimes",
-        help="Create V2.3 rolling volatility-state regime diagnostics.",
-    )
-    parser.add_argument("--results-dir", type=Path, default=ROLLING_RESULTS_DIR)
-    parser.add_argument("--output-dir", type=Path, default=ROLLING_REGIME_RESULTS_DIR)
-    parser.add_argument("--min-episode-windows", type=int, default=MIN_EPISODE_WINDOWS)
-    parser.set_defaults(handler=_handle_rolling_regimes)
-
-
 def _add_plot(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser("plot", help="Create plot artifacts.")
     plot_subparsers = parser.add_subparsers(dest="plot_command")
@@ -319,67 +226,6 @@ def _add_plot(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -
                               default=FINAL_DECOMPOSITION_CSV)
     mc_baselines.add_argument("--k", type=int, default=DEFAULT_K)
     mc_baselines.set_defaults(handler=_handle_plot_monte_carlo_baselines)
-
-    rolling = plot_subparsers.add_parser(
-        "rolling",
-        help="Create V2.1 rolling volatility and scale-composition plots.",
-    )
-    rolling.add_argument("--results-dir", type=Path, default=ROLLING_RESULTS_DIR)
-    rolling.add_argument("--output-dir", type=Path, default=ROLLING_WINDOWS_PLOTS_DIR)
-    rolling.set_defaults(handler=_handle_plot_rolling)
-
-    rolling_examples = plot_subparsers.add_parser(
-        "rolling-examples",
-        help="Create V2.1 example rolling decomposition plots.",
-    )
-    rolling_examples.add_argument("--final-csv", type=Path, default=FINAL_RETURNS_CSV)
-    rolling_examples.add_argument("--results-dir", type=Path, default=ROLLING_RESULTS_DIR)
-    rolling_examples.add_argument(
-        "--output-dir",
-        type=Path,
-        default=ROLLING_WINDOWS_PLOTS_DIR / "examples",
-    )
-    rolling_examples.add_argument("--k", type=int, default=ROLLING_K)
-    rolling_examples.add_argument("--step-size", type=int, default=ROLLING_STEP_SIZE)
-    rolling_examples.set_defaults(handler=_handle_plot_rolling_examples)
-
-    rolling_baselines = plot_subparsers.add_parser(
-        "rolling-baselines",
-        help="Create rolling baseline correlation envelope plots.",
-    )
-    rolling_baselines.add_argument(
-        "--results-dir",
-        type=Path,
-        default=ROLLING_BASELINE_RESULTS_DIR,
-    )
-    rolling_baselines.add_argument(
-        "--output-dir",
-        type=Path,
-        default=ROLLING_BASELINE_PLOTS_DIR,
-    )
-    rolling_baselines.set_defaults(handler=_handle_plot_rolling_baselines)
-
-    rolling_regimes = plot_subparsers.add_parser(
-        "rolling-regimes",
-        help="Create V2.3 rolling volatility-state regime plots.",
-    )
-    rolling_regimes.add_argument("--final-csv", type=Path, default=FINAL_RETURNS_CSV)
-    rolling_regimes.add_argument(
-        "--results-dir",
-        type=Path,
-        default=ROLLING_REGIME_RESULTS_DIR,
-    )
-    rolling_regimes.add_argument(
-        "--rolling-results-dir",
-        type=Path,
-        default=ROLLING_RESULTS_DIR,
-    )
-    rolling_regimes.add_argument(
-        "--output-dir",
-        type=Path,
-        default=ROLLING_REGIME_PLOTS_DIR,
-    )
-    rolling_regimes.set_defaults(handler=_handle_plot_rolling_regimes)
 
     all_plots = plot_subparsers.add_parser(
         "all", help="Create all plot artifacts.")
@@ -524,47 +370,6 @@ def _handle_monte_carlo_comparisons(args: argparse.Namespace) -> None:
     _print_json(report)
 
 
-def _handle_rolling(args: argparse.Namespace) -> None:
-    report = compute_rolling_decomposition_diagnostics(
-        RollingPaths(
-            input_csv=args.input_csv,
-            output_dir=args.output_dir,
-        ),
-        window_lengths=tuple(args.window_lengths),
-        step_size=args.step_size,
-        k=args.k,
-    )
-    _print_json(report)
-
-
-def _handle_rolling_baselines(args: argparse.Namespace) -> None:
-    report = compute_rolling_baseline_correlations(
-        RollingBaselineCorrelationPaths(
-            audit_csv=args.audit_csv,
-            empirical_layer_volatility_csv=args.empirical_layer_volatility_csv,
-            output_dir=args.output_dir,
-            runtime_log_csv=args.runtime_log_csv,
-        ),
-        window_lengths=tuple(args.window_lengths),
-        step_size=args.step_size,
-        k=args.k,
-        max_workers=args.max_workers,
-        max_simulations_per_type=args.max_simulations_per_type,
-    )
-    _print_json(report)
-
-
-def _handle_rolling_regimes(args: argparse.Namespace) -> None:
-    report = compute_rolling_regime_diagnostics(
-        RollingRegimePaths(
-            results_dir=args.results_dir,
-            output_dir=args.output_dir,
-        ),
-        min_episode_windows=args.min_episode_windows,
-    )
-    _print_json(report)
-
-
 def _handle_plot_memo(args: argparse.Namespace) -> None:
     _print_paths(
         create_v11_memo_plots(
@@ -589,55 +394,6 @@ def _handle_plot_monte_carlo_baselines(args: argparse.Namespace) -> None:
                 final_decomposition_csv=args.final_decomposition_csv,
             ),
             k=args.k,
-        )
-    )
-
-
-def _handle_plot_rolling(args: argparse.Namespace) -> None:
-    _print_paths(
-        create_rolling_plots(
-            RollingPlotPaths(
-                results_dir=args.results_dir,
-                output_dir=args.output_dir,
-            )
-        )
-    )
-
-
-def _handle_plot_rolling_examples(args: argparse.Namespace) -> None:
-    _print_paths(
-        create_rolling_example_decomposition_plots(
-            RollingExamplePlotPaths(
-                final_returns_csv=args.final_csv,
-                results_dir=args.results_dir,
-                output_dir=args.output_dir,
-            ),
-            k=args.k,
-            step_size=args.step_size,
-        )
-    )
-
-
-def _handle_plot_rolling_baselines(args: argparse.Namespace) -> None:
-    _print_paths(
-        create_rolling_baseline_plots(
-            RollingBaselinePlotPaths(
-                results_dir=args.results_dir,
-                output_dir=args.output_dir,
-            )
-        )
-    )
-
-
-def _handle_plot_rolling_regimes(args: argparse.Namespace) -> None:
-    _print_paths(
-        create_rolling_regime_plots(
-            RollingRegimePlotPaths(
-                final_returns_csv=args.final_csv,
-                results_dir=args.results_dir,
-                rolling_results_dir=args.rolling_results_dir,
-                output_dir=args.output_dir,
-            )
         )
     )
 

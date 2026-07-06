@@ -8,11 +8,6 @@ data/decomposition/*.csv
 # Baselines
 results/monte_carlo_baselines/*.csv
 
-# smoke
-plots/results/rolling_windows/baselines_smoke/
-results/rolling_baselines_smoke/
-results/rolling_baselines_logging_smoke/
-
 # Python
 __pycache__/
 .ipynb_checkpoints/
