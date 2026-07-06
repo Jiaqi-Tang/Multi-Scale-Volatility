@@ -24,7 +24,7 @@ from multi_scale_volatility.core.config.paths import (
 from multi_scale_volatility.plotting.global_results import (
     MonteCarloBaselinePlotPaths,
     create_monte_carlo_baseline_plots,
-    create_v11_memo_plots,
+    create_v2_memo_plots,
 )
 from multi_scale_volatility.plotting.rolling import (
     RollingExamplePlotPaths,
@@ -63,7 +63,7 @@ def add_plot_commands(
 
     mc_baselines = plot_subparsers.add_parser(
         "monte-carlo-baselines",
-        help="Create V1.1 Monte Carlo baseline envelope plots.",
+        help="Create global Monte Carlo baseline envelope plots.",
     )
     mc_baselines.add_argument("--results-dir", type=Path, default=MONTE_CARLO_BASELINES_RESULTS_DIR)
     mc_baselines.add_argument("--final-returns-csv", type=Path, default=FINAL_RETURNS_CSV)
@@ -77,7 +77,7 @@ def add_plot_commands(
 
     rolling = plot_subparsers.add_parser(
         "rolling",
-        help="Create V2.1 rolling volatility and scale-composition plots.",
+        help="Create rolling volatility and scale-composition plots.",
     )
     rolling.add_argument("--results-dir", type=Path, default=ROLLING_RESULTS_DIR)
     rolling.add_argument("--output-dir", type=Path, default=ROLLING_WINDOWS_PLOTS_DIR)
@@ -85,7 +85,7 @@ def add_plot_commands(
 
     rolling_examples = plot_subparsers.add_parser(
         "rolling-examples",
-        help="Create V2.1 example rolling decomposition plots.",
+        help="Create example rolling decomposition plots.",
     )
     rolling_examples.add_argument("--final-csv", type=Path, default=FINAL_RETURNS_CSV)
     rolling_examples.add_argument("--results-dir", type=Path, default=ROLLING_RESULTS_DIR)
@@ -104,7 +104,7 @@ def add_plot_commands(
 
     rolling_regimes = plot_subparsers.add_parser(
         "rolling-regimes",
-        help="Create V2.3 rolling volatility-state regime plots.",
+        help="Create rolling volatility-state regime plots.",
     )
     rolling_regimes.add_argument("--final-csv", type=Path, default=FINAL_RETURNS_CSV)
     rolling_regimes.add_argument("--results-dir", type=Path, default=ROLLING_REGIME_RESULTS_DIR)
@@ -119,7 +119,7 @@ def add_plot_commands(
 
 def _handle_plot_memo(args: argparse.Namespace) -> None:
     print_paths(
-        create_v11_memo_plots(
+        create_v2_memo_plots(
             MonteCarloBaselinePlotPaths(
                 results_dir=args.results_dir,
                 audit_csv=args.audit_csv,

@@ -1890,33 +1890,13 @@ plots/memo
 Memo plots are presentation-oriented figures used in `Memo.md`. They are derived
 from the same datasets and result tables documented above.
 
-**Figure 1: Decomposition example**
+**Figure 1: Return distribution and absolute-return ACF**
 
 ```text
-figure_01_decomposition_example.png
+figure_01_return_distribution_and_abs_acf.png
 ```
 
-Shows selected components from the EUR/USD decomposition:
-
-$$
-R^{\ast},\quad D_1,\quad D_3,\quad D_6,\quad D_9,\quad D_{11},\quad A_{11}
-$$
-
-with observation index on the x-axis.
-
-**Figure 2: Return distribution**
-
-```text
-figure_02_return_distribution.png
-```
-
-Combines a QQ plot of $R^{\ast}$ against:
-
-$$
-\mathcal{N}(0, \mathrm{Var}(R^{\ast}))
-$$
-
-with a zoomed density histogram comparing:
+Shows a zoomed density histogram comparing:
 
 $$
 R^{\ast}
@@ -1928,23 +1908,17 @@ $$
 R^{BM}
 $$
 
-**Figure 3: Absolute-return autocorrelation**
-
-```text
-figure_03_abs_return_acf.png
-```
-
-Plots empirical absolute-return autocorrelation against shuffled and Gaussian
-Monte Carlo baseline medians with 5-95% envelopes:
+and absolute-return autocorrelation against shuffled and Gaussian Monte Carlo
+baseline medians with 5-95% envelopes:
 
 $$
 \mathrm{Corr}(|r_i|, |r_{i-\ell}|)
 $$
 
-**Figure 4: Energy profile**
+**Figure 2: Energy profile**
 
 ```text
-figure_04_energy_profile.png
+figure_02_energy_profile.png
 ```
 
 Shows empirical detail energy share with shuffled and Gaussian baseline medians
@@ -1961,10 +1935,10 @@ $$
 p_k^{EURUSD} - p_{k,95}^{baseline} \quad \text{to} \quad p_k^{EURUSD} - p_{k,05}^{baseline}
 $$
 
-**Figure 5: Cross-scale correlation**
+**Figure 3: Cross-scale correlation**
 
 ```text
-figure_05_cross_scale_correlation.png
+figure_03_cross_scale_correlation.png
 ```
 
 Shows:
@@ -1973,30 +1947,56 @@ $$
 \mathrm{Corr}(|X_c|, |X_d|)
 $$
 
-for EUR/USD components, the difference against the shuffled baseline median, and
-an indicator for component pairs outside the shuffled 5-95% envelope.
+for EUR/USD components and the difference against the shuffled baseline median.
 
-**Figure 6: Entropy profile**
+**Figure 4: Rolling RMS structure**
 
 ```text
-figure_06_entropy_profile.png
+figure_04_rolling_rms_structure.png
 ```
 
-Shows normalized permutation entropy:
+Shows rolling RMS volatility heatmaps and RMS component correlation matrices for:
 
 $$
-H_c^{norm} = \frac{H_c}{\log(6)}
+W \in \{2048,8192\}
 $$
 
-for EUR/USD and shuffled/Gaussian baseline medians with 5-95% envelopes. The
-dashed reference line uses:
+**Figure 5: Rolling scale-group shares**
+
+```text
+figure_05_rolling_scale_group_shares.png
+```
+
+Shows rolling fine, mid, and coarse detail energy shares for:
 
 $$
-q = \left(\frac{1}{8}, \frac{3}{16}, \frac{3}{16}, \frac{3}{16}, \frac{3}{16}, \frac{1}{8}\right)
+W \in \{2048,8192\}
 $$
 
-and:
+**Figure 6: Regime state map**
+
+```text
+figure_06_regime_state_map.png
+```
+
+Shows the V2.3 percentile state map:
 
 $$
-H_{ref}^{norm} = \frac{-\sum_{j=1}^{6}q_j\log(q_j)}{\log(6)} \approx 0.9908
+\left(u_{q,vol}^{(W)}, u_{q,fine}^{(W)}\right)
+$$
+
+for:
+
+$$
+W = 2048
+$$
+
+and raw EUR/USD close with high-volatility regime episodes shaded.
+
+The high-volatility regime labels are:
+
+$$
+\text{highVol\_lowFine},\quad
+\text{highVol\_midFine},\quad
+\text{highVol\_highFine}
 $$

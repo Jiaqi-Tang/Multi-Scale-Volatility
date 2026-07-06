@@ -43,7 +43,7 @@ def add_rolling_commands(
 def _add_rolling(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser(
         "rolling",
-        help="Create V2.1 rolling window decomposition diagnostics.",
+        help="Create rolling window decomposition diagnostics.",
     )
     parser.add_argument("--input-csv", type=Path, default=FINAL_RETURNS_CSV)
     parser.add_argument("--output-dir", type=Path, default=ROLLING_RESULTS_DIR)
@@ -81,7 +81,7 @@ def _add_rolling_regimes(
 ) -> None:
     parser = subparsers.add_parser(
         "rolling-regimes",
-        help="Create V2.3 rolling volatility-state regime diagnostics.",
+        help="Create rolling volatility-state regime diagnostics.",
     )
     parser.add_argument("--results-dir", type=Path, default=ROLLING_RESULTS_DIR)
     parser.add_argument("--output-dir", type=Path, default=ROLLING_REGIME_RESULTS_DIR)
