@@ -1,0 +1,56 @@
+"""Preprocessing pipeline orchestration."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from multi_scale_volatility.research.preprocessing.cleaning import clean_1m
+from multi_scale_volatility.research.preprocessing.paths import PreprocessingPaths
+from multi_scale_volatility.research.preprocessing.raw import load_raw_1m
+from multi_scale_volatility.research.preprocessing.resampling import build_5m_ohlc
+from multi_scale_volatility.research.preprocessing.returns import build_clean_returns
+from multi_scale_volatility.core.reports import PreprocessingOutputs
+from multi_scale_volatility.app.runtime import get_logger
+from multi_scale_volatility.core.io import write_csv
+from multi_scale_volatility.core.io import write_json
+
+logger = get_logger(__name__)
+
+
+def run_preprocessing(paths: PreprocessingPaths | None = None) -> dict[str, Any]:
+    paths = paths or PreprocessingPaths()
+    paths.intermediate_dir.mkdir(parents=True, exist_ok=True)
+    logger.info("Preprocessing raw data from %s", paths.raw_dir)
+
+    report: dict[str, Any] = {
+        "asset": "EUR/USD",
+        "raw_frequency": "1min",
+        "output_bar_frequency": "5min",
+        "raw_timezone_assumption": "fixed EST (UTC-05:00), no DST",
+        "output_timezone": "UTC",
+    }
+
+    raw, raw_report = load_raw_1m(paths.raw_dir)
+    report.update(raw_report)
+
+    clean_1m_frame, clean_1m_report = clean_1m(raw)
+    report.update(clean_1m_report)
+    write_csv(clean_1m_frame, paths.clean_1m_csv, index=False)
+
+    ohlc_5m, ohlc_report = build_5m_ohlc(clean_1m_frame)
+    report.update(ohlc_report)
+    write_csv(ohlc_5m, paths.ohlc_5m_csv, index=False)
+
+    clean_returns, returns_report = build_clean_returns(ohlc_5m)
+    report.update(returns_report)
+    write_csv(clean_returns, paths.clean_returns_csv, index=False)
+
+    report["outputs"] = PreprocessingOutputs(
+        clean_1m_csv=paths.clean_1m_csv,
+        ohlc_5m_csv=paths.ohlc_5m_csv,
+        clean_returns_csv=paths.clean_returns_csv,
+        report_json=paths.report_json,
+    ).as_dict()
+    write_json(paths.report_json, report)
+    logger.info("Wrote clean returns to %s", paths.clean_returns_csv)
+    return report

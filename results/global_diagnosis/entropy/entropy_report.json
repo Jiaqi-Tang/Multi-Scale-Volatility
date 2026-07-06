@@ -1,0 +1,8 @@
+{
+  "K": 11,
+  "base_interval_minutes": 5,
+  "layer_entropy_csv": "results\\global_diagnosis\\entropy\\layer_entropy.csv",
+  "series": [
+    "final"
+  ]
+}

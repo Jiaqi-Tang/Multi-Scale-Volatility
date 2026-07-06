@@ -1,10 +1,5 @@
 # Multi-Scale Volatility Structure in EUR/USD Returns
 
-Current version: **V2.1**. The V1.1 global Monte Carlo baseline pipeline is retained.
-
-V2.1 adds fixed-observation rolling diagnostics and rolling baseline correlation
-envelopes on top of the V1.1 global analysis.
-
 - `Memo.md` - concise research summary and findings
 - `Documentation.md` - exact preprocessing, decomposition, metric, rolling, and baseline-envelope definitions
 - `README.md` - project overview and reproduction guide
@@ -12,43 +7,45 @@ envelopes on top of the V1.1 global analysis.
 
 ## Objective
 
-This project explores the **multi-scale** structure of **EUR/USD volatility** using a minimalist dyadic decomposition framework applied to 5-minute log returns.
+This project studies empirical volatility structure in EUR/USD 5-minute returns using a dyadic multi-scale decomposition. The goal is to separate:
 
-The analysis compares real EUR/USD returns against two reference processes:
+- volatility level,
+- scale allocation,
+- cross-scale dependence,
 
-- shuffled-return baselines, which preserve the empirical return distribution
-  while destroying temporal order
-- variance-matched Gaussian baselines, which represent independent Gaussian
-  increments with the empirical population variance
+and compare these empirical features against Gaussian and shuffled-return baselines.
 
-The primary goal is to identify whether real FX volatility exhibits
-scale-dependent structure beyond heavy tails or independent noise alone.
+The motivating question is:
 
-The global V1.1 analysis is a minimalist full-sample exploration. V2.1 adds
-rolling windows to inspect time-local volatility structure. The project still
-does not include forecasting, regime classification, event studies, or trading
-rules.
+> How is empirical EUR/USD volatility structured across time and scale, and how does this structure differ from variance-matched Gaussian noise and shuffled heavy-tailed returns?
+
+The project is intentionally minimalist: it does not use forecasting models, option data, order book data, or trading rules. Instead, it focuses on transparent volatility diagnostics that can be interpreted across scales and through time.
 
 ## Key Findings
 
-- EUR/USD volatility exhibits excess finest-scale energy relative to the median
-  shuffled and Gaussian baseline profiles.
-- Intermediate decomposition scales show relative energy deficits.
-- Volatility states exhibit persistent cross-scale coupling beyond what is
-  explained by the shuffled baseline envelope.
-- Rolling windows expose time-local shifts in fine, mid, and coarse volatility
-  share structure.
-- Absolute-return autocorrelation confirms strong volatility clustering.
-- Permutation entropy differences remain comparatively weak under the current
-  specification.
+- **Rolling RMS volatility synchronizes strongly across scales:** High-volatility periods tend to raise RMS across many detail components simultaneously.
+- **Scale composition is comparatively stable:** Fine-scale detail energy dominates through time, while mid and coarse shares fluctuate within narrower ranges.
+- **Volatility level and scale composition are distinct.** Total RMS volatility is nearly uncorrelated with fine/mid/coarse energy shares.
+- **Global energy allocation differs from baselines:** Empirical returns show excess finest-scale detail energy and intermediate-scale energy deficits relative to both Gaussian and shuffled baselines.
 
-### Example Decomposition
+### Global Energy Allocation
 
-![Decomposition](plots/memo/figure_01_decomposition_example.png)
+![Global energy profile](plots/memo/figure_02_energy_profile.png)
 
-### Cross-Scale Volatility Coupling
+### Rolling RMS Synchronization
 
-![Cross Scale Correlation](plots/memo/figure_05_cross_scale_correlation.png)
+![Rolling RMS volatility structure](plots/memo/figure_04_rolling_rms_structure.png)
+
+## Version Roadmap
+
+| Version    | Focus                                                                               | Status   |
+| ---------- | ----------------------------------------------------------------------------------- | -------- |
+| V1.0       | Initial full-sample dyadic decomposition and diagnostics                            | Complete |
+| V1.1       | Monte Carlo Gaussian/shuffled baselines with median and 5–95% envelopes             | Complete |
+| V2.1       | Rolling-window RMS volatility and energy-share diagnostics                          | Complete |
+| V2.2       | Rolling baseline envelopes for cross-scale correlation diagnostics                  | Complete |
+| V2.3       | Exploratory volatility-state regime maps using total RMS and fine-share percentiles | Complete |
+| V3 planned | Event-aligned transition analysis of high-volatility episodes                       | Planned  |
 
 ## Reproduce the Pipeline
 
@@ -60,106 +57,50 @@ Install dependencies:
 pip install -e .
 ```
 
-Run the full V1.1 global pipeline (runtime around `14min`):
+Run the full current pipeline:
 
 ```powershell
-ve run-all
+ve run all
 ```
 
-This runs preprocessing, length standardization, empirical decomposition,
-empirical metrics, Monte Carlo baseline generation, Monte Carlo baseline metrics
-and comparisons, and V1.1 plot generation.
+Starting from the source code and `data/raw/`, this regenerates the processed
+data, derived decompositions and baselines, result tables, and plots for the
+current analysis. `ve run-all` is kept as a compatibility alias.
 
-Or run each V1.1 step explicitly:
+Run grouped stages when you only need part of the workflow:
 
 ```powershell
-ve preprocess
-ve standardize
-ve decompose
-ve volatility
-ve entropy
-ve baselines
-ve monte-carlo-metrics
-ve monte-carlo-comparisons
-ve plot memo
+ve run data
+ve run global
+ve run monte-carlo
+ve run rolling
+ve run plots
 ```
 
-Run the V2.1 rolling diagnostics:
+Run individual steps when needed:
 
 ```powershell
-ve rolling
-ve plot rolling
-ve plot rolling-examples
+ve run data preprocess
+ve run data standardize
+ve run global decompose
+ve run global metrics
+ve run monte-carlo baselines
+ve run monte-carlo metrics
+ve run rolling diagnostics
+ve run rolling baselines
+ve run rolling regimes
+ve run plots global
+ve run plots rolling
+ve run plots regimes
+ve run plots memo
 ```
 
-Run rolling baseline correlation envelopes:
+`ve run plots rolling` combines rolling diagnostic plots, rolling example plots,
+and rolling baseline envelope plots. Lower-level commands such as `ve plot memo`
+remain available for targeted plot regeneration during development.
 
-```powershell
-ve rolling-baselines
-ve plot rolling-baselines
-```
+## Current Status and Next Steps
 
-## Repository Structure
+V2.3 is complete. The current results suggest that EUR/USD volatility level is strongly synchronized across decomposition scales, while fine/mid/coarse energy-share composition is comparatively stable and mostly independent of total RMS volatility.
 
-```text
-src/
-  multi_scale_volatility/
-    config/
-    plotting/
-    preprocessing/
-    stats/
-    utils/
-
-data/
-  raw/
-  intermediate/
-  final/
-  decomposition/
-  monte_carlo_baselines/
-    returns/
-    decomposition/
-
-results/
-  volatility/
-  entropy/
-  monte_carlo_baselines/
-  rolling/
-  rolling_baselines/
-
-plots/
-  memo/
-  results/
-    data_eda/
-    global_data/
-    rolling_windows/
-      rms/
-      energy_share/
-      examples/
-      baselines/
-
-Documentation.md
-Memo.md
-README.md
-```
-
-## Current Status
-
-V2.1 complete:
-
-- preprocessing pipeline,
-- dyadic decomposition,
-- Monte Carlo baseline construction,
-- volatility diagnostics,
-- entropy diagnostics,
-- cross-scale correlation analysis,
-- fixed-observation rolling decompositions,
-- rolling RMS and energy-share diagnostics,
-- rolling baseline correlation-envelope comparisons.
-
-Currently exploring:
-
-- event-transition analysis,
-- possible V3 extensions.
-
-Known runtime notes: entropy is the slowest global Monte Carlo metric stage; the
-rolling baseline run is dominated by rolling metric computation for $W=8192$.
+The natural V3 direction is **event-aligned transition analysis**. The goal is to test whether high-volatility episodes begin as fine-scale bursts and then spread into broader mid-scale activation, or whether multiple scales activate simultaneously.

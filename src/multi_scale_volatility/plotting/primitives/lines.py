@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from multi_scale_volatility.config.names import INDEX
+from multi_scale_volatility.core.config.names import INDEX
 from multi_scale_volatility.plotting.save import save_figure
 from multi_scale_volatility.plotting.style import FIGURE_DPI, GRID_FIGURE_DPI
-from multi_scale_volatility.components import decomposition_components
+from multi_scale_volatility.core.components import decomposition_components
 
 
 def plot_return_line(returns: np.ndarray, output_path: Path, title: str) -> Path:

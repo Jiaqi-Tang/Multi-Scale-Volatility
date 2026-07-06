@@ -7,9 +7,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from multi_scale_volatility.config.names import COMPONENT, SERIES
-from multi_scale_volatility.config.names import ENTROPY_GAP_GAUSSIAN, ENTROPY_GAP_SHUFFLE
-from multi_scale_volatility.config.names import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_ORDER, SERIES_SHUFFLE
+from multi_scale_volatility.core.config.names import COMPONENT, SERIES
+from multi_scale_volatility.core.config.names import ENTROPY_GAP_GAUSSIAN, ENTROPY_GAP_SHUFFLE
+from multi_scale_volatility.core.config.names import SERIES_FINAL, SERIES_GAUSSIAN, SERIES_ORDER, SERIES_SHUFFLE
 from multi_scale_volatility.plotting.save import save_figure
 from multi_scale_volatility.plotting.style import (
     FIGURE_DPI,
@@ -17,7 +17,7 @@ from multi_scale_volatility.plotting.style import (
     SERIES_COLORS,
     SHUFFLE_COLOR,
 )
-from multi_scale_volatility.components import decomposition_components
+from multi_scale_volatility.core.components import decomposition_components
 
 
 def plot_series_metric(

@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from multi_scale_volatility.config.paths import (
+from multi_scale_volatility.core.config.paths import (
     ROLLING_BASELINE_CORRELATION_EMPIRICAL_COMPARISON_CSV,
     ROLLING_BASELINE_PLOTS_DIR,
     ROLLING_BASELINE_RESULTS_DIR,

@@ -10,14 +10,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from multi_scale_volatility.config.names import (
+from multi_scale_volatility.core.config.names import (
     COMPONENT,
     COMPONENT_TYPE,
     DETAIL_ENERGY_SHARE,
     LOG_RETURN,
     RMS_VOLATILITY,
 )
-from multi_scale_volatility.config.paths import (
+from multi_scale_volatility.core.config.paths import (
     FINAL_RETURNS_CSV,
     ROLLING_LAYER_VOLATILITY_CSV,
     ROLLING_REGIME_CELL_COUNTS_CSV,
@@ -35,7 +35,7 @@ from multi_scale_volatility.plotting.style import (
     GAUSSIAN_COLOR,
     SHUFFLE_COLOR,
 )
-from multi_scale_volatility.rolling_regimes import (
+from multi_scale_volatility.research.rolling_window_diagnosis.rolling_regimes import (
     FINE_BUCKET_ORDER,
     PROFILE_REGIMES,
     VOL_BUCKET_ORDER,

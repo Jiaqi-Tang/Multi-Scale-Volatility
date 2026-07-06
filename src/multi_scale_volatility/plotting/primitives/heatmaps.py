@@ -10,8 +10,8 @@ import pandas as pd
 
 from multi_scale_volatility.plotting.save import save_figure
 from multi_scale_volatility.plotting.style import FIGURE_DPI
-from multi_scale_volatility.components import decomposition_components
-from multi_scale_volatility.stats import (
+from multi_scale_volatility.core.components import decomposition_components
+from multi_scale_volatility.core.stats import (
     absolute_component_correlation,
     absolute_component_correlation_difference,
 )

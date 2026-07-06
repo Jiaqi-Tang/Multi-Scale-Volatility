@@ -1,0 +1,19 @@
+{
+  "K": 11,
+  "base_interval_minutes": 5,
+  "series": {
+    "final": {
+      "input_csv": "data\\processed\\eurusd_5m_log_returns_final.csv",
+      "output_csv": "data\\derived\\decomposition\\final_decomposition.csv",
+      "N": 735232,
+      "K": 11,
+      "block_size_max": 2048,
+      "max_scale_minutes": 10240,
+      "max_scale_days": 7.111111111111111,
+      "timestamp_start_utc": "2016-01-03 22:05:00+00:00",
+      "timestamp_end_utc": "2025-12-30 06:25:00+00:00",
+      "max_abs_reconstruction_error": 3.469446951953614e-18,
+      "mean_abs_reconstruction_error": 2.2820538114180538e-20
+    }
+  }
+}

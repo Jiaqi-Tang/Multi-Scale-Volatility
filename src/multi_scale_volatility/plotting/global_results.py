@@ -6,13 +6,14 @@ from dataclasses import dataclass
 from pathlib import Path
 import math
 
+import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from multi_scale_volatility.config.names import COMPONENT, COMPONENT_TYPE, LOG_RETURN
-from multi_scale_volatility.config.names import DEFAULT_K
-from multi_scale_volatility.config.names import (
+from multi_scale_volatility.core.config.names import COMPONENT, COMPONENT_TYPE, LOG_RETURN
+from multi_scale_volatility.core.config.names import DEFAULT_K
+from multi_scale_volatility.core.config.names import (
     ANNUALIZED_RMS_VOLATILITY,
     DETAIL_ENERGY_SHARE,
     NORMALIZED_ENTROPY,
@@ -20,7 +21,7 @@ from multi_scale_volatility.config.names import (
     RMS_VOLATILITY,
     TOTAL_COMPONENT_ENERGY_SHARE,
 )
-from multi_scale_volatility.config.paths import (
+from multi_scale_volatility.core.config.paths import (
     DATA_EDA_DECOMPOSITION_PLOTS_DIR,
     DATA_EDA_RETURNS_PLOTS_DIR,
     FINAL_DECOMPOSITION_CSV,
@@ -41,6 +42,8 @@ from multi_scale_volatility.config.paths import (
     MEMO_PLOTS_DIR,
     MONTE_CARLO_BASELINE_AUDIT_CSV,
     MONTE_CARLO_BASELINES_RESULTS_DIR,
+    ROLLING_REGIME_PLOTS_DIR,
+    ROLLING_WINDOWS_PLOTS_DIR,
 )
 from multi_scale_volatility.plotting.memo import (
     plot_memo_decomposition_example,
@@ -53,9 +56,13 @@ from multi_scale_volatility.plotting.style import (
     GAUSSIAN_COLOR,
     SHUFFLE_COLOR,
 )
-from multi_scale_volatility.components import decomposition_components
-from multi_scale_volatility.stats import absolute_component_correlation, autocorrelation
-from multi_scale_volatility.utils.validation import require_positive_k
+from multi_scale_volatility.core.components import decomposition_components
+from multi_scale_volatility.core.stats import (
+    absolute_component_correlation,
+    autocorrelation,
+    normal_quantiles_for_values,
+)
+from multi_scale_volatility.core.utils.validation import require_positive_k
 
 
 @dataclass(frozen=True)
@@ -148,6 +155,105 @@ def create_v11_memo_plots(
     ]
     outputs.extend(create_monte_carlo_baseline_plots(paths, k=k))
     return outputs
+
+
+def create_v2_memo_plots(
+    paths: MonteCarloBaselinePlotPaths | None = None,
+    k: int = DEFAULT_K,
+) -> list[Path]:
+    paths = paths or MonteCarloBaselinePlotPaths()
+    require_positive_k(k)
+    paths.memo_output_dir.mkdir(parents=True, exist_ok=True)
+
+    final_returns = pd.read_csv(paths.final_returns_csv, usecols=[LOG_RETURN])[
+        LOG_RETURN
+    ].astype(float).to_numpy()
+    audit = pd.read_csv(paths.audit_csv)
+    gaussian_record = (
+        audit[audit["baseline_type"] == "gaussian"]
+        .sort_values("simulation_id")
+        .iloc[0]
+    )
+    gaussian_returns = pd.read_parquet(
+        gaussian_record["return_parquet"],
+        columns=[LOG_RETURN],
+    )[LOG_RETURN].astype(float).to_numpy()
+
+    details = [f"D_{scale:02d}" for scale in range(1, k + 1)]
+    volatility_summary = pd.read_csv(paths.volatility_summary_csv)
+    volatility_comparison = pd.read_csv(paths.volatility_comparison_csv)
+    acf_summary = pd.read_csv(paths.acf_summary_csv)
+    acf_comparison = pd.read_csv(paths.acf_comparison_csv)
+    corr_comparison = pd.read_csv(paths.corr_comparison_csv)
+
+    return [
+        plot_v2_return_distribution_and_abs_acf(
+            final_returns,
+            gaussian_returns,
+            acf_summary,
+            acf_comparison,
+            paths.memo_output_dir / "figure_01_return_distribution_and_abs_acf.png",
+        ),
+        plot_memo_energy_profile(
+            volatility_summary,
+            volatility_comparison,
+            paths.memo_output_dir / "figure_02_energy_profile.png",
+            components=details,
+        ),
+        plot_correlation_memo(
+            paths.final_decomposition_csv,
+            corr_comparison,
+            paths.memo_output_dir / "figure_03_cross_scale_correlation.png",
+            k=k,
+        ),
+        plot_image_grid(
+            [
+                ROLLING_WINDOWS_PLOTS_DIR / "rms" / "rms_volatility_heatmap_2048.png",
+                ROLLING_WINDOWS_PLOTS_DIR / "rms" / "rms_volatility_correlation_2048.png",
+                ROLLING_WINDOWS_PLOTS_DIR / "rms" / "rms_volatility_heatmap_8192.png",
+                ROLLING_WINDOWS_PLOTS_DIR / "rms" / "rms_volatility_correlation_8192.png",
+            ],
+            paths.memo_output_dir / "figure_04_rolling_rms_structure.png",
+            title="Rolling RMS Volatility and Cross-Scale Synchronization",
+            panel_titles=[
+                "RMS heatmap, W=2048",
+                "RMS correlation, W=2048",
+                "RMS heatmap, W=8192",
+                "RMS correlation, W=8192",
+            ],
+            ncols=2,
+        ),
+        plot_image_grid(
+            [
+                ROLLING_WINDOWS_PLOTS_DIR
+                / "energy_share"
+                / "fine_mid_coarse_share_2048.png",
+                ROLLING_WINDOWS_PLOTS_DIR
+                / "energy_share"
+                / "fine_mid_coarse_share_8192.png",
+            ],
+            paths.memo_output_dir / "figure_05_rolling_scale_group_shares.png",
+            title="Rolling Fine, Mid, and Coarse Detail Energy Shares",
+            panel_titles=[
+                "Grouped detail energy shares, W=2048",
+                "Grouped detail energy shares, W=8192",
+            ],
+            ncols=1,
+        ),
+        plot_image_grid(
+            [
+                ROLLING_REGIME_PLOTS_DIR / "regime_scatter_percentile_2048.png",
+                ROLLING_REGIME_PLOTS_DIR / "raw_price_with_highvol_regimes_2048.png",
+            ],
+            paths.memo_output_dir / "figure_06_regime_state_map.png",
+            title="V2.3 Rolling State Map and Price Context",
+            panel_titles=[
+                "Total-RMS percentile vs fine-share percentile, W=2048",
+                "EUR/USD close with high-volatility regimes, W=2048",
+            ],
+            ncols=1,
+        ),
+    ]
 
 
 def create_monte_carlo_baseline_plots(
@@ -341,6 +447,120 @@ def create_monte_carlo_baseline_plots(
             )
         )
     return outputs
+
+
+def plot_v2_return_distribution_and_abs_acf(
+    final_returns: np.ndarray,
+    gaussian_returns: np.ndarray,
+    acf_summary: pd.DataFrame,
+    acf_comparison: pd.DataFrame,
+    output_path: Path,
+    max_lag: int = 1440,
+) -> Path:
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5.6))
+    histogram_axis, acf_axis = axes
+
+    histogram_range = (-0.0015, 0.0015)
+    histogram_axis.hist(
+        final_returns,
+        bins=220,
+        range=histogram_range,
+        density=True,
+        alpha=0.58,
+        color=FINAL_COLOR,
+        label="EUR/USD",
+    )
+    histogram_axis.hist(
+        gaussian_returns,
+        bins=220,
+        range=histogram_range,
+        density=True,
+        alpha=0.45,
+        color=GAUSSIAN_COLOR,
+        label="Gaussian baseline",
+    )
+    histogram_axis.set_title("Return Distribution")
+    histogram_axis.set_xlabel("5m log return")
+    histogram_axis.set_ylabel("Density")
+    histogram_axis.set_xlim(*histogram_range)
+    histogram_axis.ticklabel_format(axis="x", style="sci", scilimits=(-3, 3))
+    histogram_axis.legend()
+
+    empirical = acf_comparison[
+        (acf_comparison["baseline_type"] == "shuffle")
+        & (acf_comparison["acf_kind"] == "absolute_return")
+        & (acf_comparison["lag"] <= max_lag)
+    ].sort_values("lag")
+    acf_axis.plot(
+        empirical["lag"].to_numpy(),
+        empirical["empirical_value"].to_numpy(dtype=float),
+        color=FINAL_COLOR,
+        linewidth=1.2,
+        label="EUR/USD",
+    )
+    for baseline_type, color, label in [
+        ("shuffle", SHUFFLE_COLOR, "Shuffled median + 5-95%"),
+        ("gaussian", GAUSSIAN_COLOR, "Gaussian median + 5-95%"),
+    ]:
+        rows = acf_summary[
+            (acf_summary["baseline_type"] == baseline_type)
+            & (acf_summary["acf_kind"] == "absolute_return")
+            & (acf_summary["lag"] <= max_lag)
+            & (acf_summary["metric"] == "acf")
+        ].sort_values("lag")
+        acf_axis.fill_between(
+            rows["lag"].to_numpy(),
+            rows["p05"].to_numpy(dtype=float),
+            rows["p95"].to_numpy(dtype=float),
+            color=color,
+            alpha=0.18,
+            linewidth=0,
+        )
+        acf_axis.plot(
+            rows["lag"].to_numpy(),
+            rows["median"].to_numpy(dtype=float),
+            color=color,
+            linewidth=1.0,
+            label=label,
+        )
+    for day in range(1, 6):
+        acf_axis.axvline(288 * day, color="black", linestyle=":", linewidth=0.7, alpha=0.35)
+    acf_axis.axhline(0.0, color="black", linewidth=0.8, alpha=0.8)
+    acf_axis.set_title("Absolute Return ACF")
+    acf_axis.set_xlabel("Lag in 5m observations")
+    acf_axis.set_ylabel("ACF")
+    acf_axis.set_xlim(1, max_lag)
+    acf_axis.legend(fontsize=8)
+
+    fig.suptitle("Heavy Tails and Volatility Clustering")
+    fig.tight_layout()
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
+    plt.close(fig)
+    return output_path
+
+
+def plot_image_grid(
+    image_paths: list[Path],
+    output_path: Path,
+    title: str,
+    panel_titles: list[str],
+    ncols: int,
+) -> Path:
+    nrows = int(math.ceil(len(image_paths) / ncols))
+    fig, axes = plt.subplots(nrows, ncols, figsize=(8.2 * ncols, 5.4 * nrows))
+    axes_array = np.atleast_1d(axes).reshape(nrows, ncols)
+    for index, axis in enumerate(axes_array.ravel()):
+        axis.axis("off")
+        if index >= len(image_paths):
+            continue
+        image = mpimg.imread(image_paths[index])
+        axis.imshow(image)
+        axis.set_title(panel_titles[index], fontsize=11)
+    fig.suptitle(title, fontsize=15)
+    fig.tight_layout()
+    save_figure(fig, output_path, dpi=FIGURE_DPI)
+    plt.close(fig)
+    return output_path
 
 
 def plot_memo_energy_profile(
@@ -774,23 +994,11 @@ def plot_correlation_memo(
     components = decomposition_components(k, include_original=False)
     final_corr = empirical_abs_corr(final_decomposition_csv, components)
     shuffle = corr_matrix(comparison, "shuffle", "difference_from_median", components)
-    outside = corr_matrix(comparison, "shuffle", "outside_envelope", components)
 
-    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+    fig, axes = plt.subplots(1, 2, figsize=(13.2, 6))
     draw_heatmap(fig, axes[0], final_corr, components, "EUR/USD Absolute Component Correlation", 0, 1, "viridis")
     limit = max(0.05, float(np.nanmax(np.abs(shuffle))))
     draw_heatmap(fig, axes[1], shuffle, components, "EUR/USD - Shuffled Median", -limit, limit, "coolwarm")
-    draw_heatmap(
-        fig,
-        axes[2],
-        outside,
-        components,
-        "Outside Shuffled Envelope (1 = outside 5-95%)",
-        0,
-        1,
-        "Reds",
-        colorbar_label="Outside envelope",
-    )
     fig.suptitle("Cross-Scale Volatility Coupling")
     fig.tight_layout()
     save_figure(fig, output_path, dpi=FIGURE_DPI)

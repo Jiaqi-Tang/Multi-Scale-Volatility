@@ -1,0 +1,39 @@
+{
+  "audit_csv": "results\\global_diagnosis\\monte_carlo_baselines\\baseline_simulation_audit.csv",
+  "empirical_layer_volatility_csv": "results\\rolling_window_diagnosis\\rolling_metrics\\rolling_layer_volatility.csv",
+  "simulations_csv": "results\\rolling_window_diagnosis\\rolling_baselines\\rolling_correlation_simulations.csv",
+  "summary_csv": "results\\rolling_window_diagnosis\\rolling_baselines\\rolling_correlation_summary.csv",
+  "empirical_comparison_csv": "results\\rolling_window_diagnosis\\rolling_baselines\\rolling_correlation_empirical_comparison.csv",
+  "runtime_log_csv": "results\\rolling_window_diagnosis\\rolling_baselines\\runtime_log.csv",
+  "window_lengths": [
+    2048,
+    8192
+  ],
+  "step_size": 288,
+  "K_roll": 9,
+  "max_workers": 4,
+  "baseline_simulations": {
+    "gaussian": 100,
+    "shuffle": 100
+  },
+  "correlation_kinds": [
+    "rms_volatility_correlation",
+    "detail_energy_share_percentile_correlation"
+  ],
+  "runtime_log_operations": [
+    "read_baseline_returns",
+    "compute_rolling_metrics_w2048",
+    "compute_rolling_metrics_w8192",
+    "compute_simulation_rolling_correlations",
+    "write_simulation_correlations",
+    "summarize_baseline_correlations",
+    "compare_empirical_correlations",
+    "compute_rolling_baseline_correlations",
+    "write_rolling_baseline_report"
+  ],
+  "rows": {
+    "simulations": 64800,
+    "summary": 648,
+    "empirical_comparison": 648
+  }
+}

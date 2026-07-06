@@ -1,8 +1,0 @@
-{
-  "K": 11,
-  "base_interval_minutes": 5,
-  "layer_entropy_csv": "results\\entropy\\layer_entropy.csv",
-  "series": [
-    "final"
-  ]
-}

@@ -1,0 +1,44 @@
+{
+  "input_csv": "data\\processed\\eurusd_5m_log_returns_final.csv",
+  "input_rows": 735232,
+  "timestamp_start_utc": "2016-01-03 22:05:00+00:00",
+  "timestamp_end_utc": "2025-12-30 06:25:00+00:00",
+  "K": 11,
+  "base_interval_minutes": 5,
+  "block_size_max": 2048,
+  "max_scale_minutes": 10240,
+  "max_scale_days": 7.111111111111111,
+  "n_simulations": 100,
+  "baseline_types": [
+    "shuffle",
+    "gaussian"
+  ],
+  "master_seed": 20260609,
+  "quantiles": [
+    0.05,
+    0.5,
+    0.95
+  ],
+  "quantile_method": "linear",
+  "returns_dir": "data\\derived\\monte_carlo_baselines\\returns",
+  "decomposition_dir": "data\\derived\\monte_carlo_baselines\\decomposition",
+  "audit_csv": "results\\global_diagnosis\\monte_carlo_baselines\\baseline_simulation_audit.csv",
+  "runtime_log_csv": "results\\global_diagnosis\\monte_carlo_baselines\\runtime_log.csv",
+  "empirical_mean_log_return": 1.381445428226864e-07,
+  "empirical_population_variance_log_return": 8.257150232019612e-08,
+  "empirical_population_std_log_return": 0.00028735257493225306,
+  "gaussian_sampling": {
+    "mean": 0.0,
+    "variance_source": "empirical_population_variance",
+    "target_population_variance": 8.257150232019612e-08,
+    "exact_rescaling": false
+  },
+  "shuffle_sampling": {
+    "rule": "random_permutation_of_empirical_returns"
+  },
+  "reconstruction_tolerance": 1e-12,
+  "simulation_counts": {
+    "gaussian": 100,
+    "shuffle": 100
+  }
+}

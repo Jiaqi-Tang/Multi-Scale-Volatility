@@ -11,12 +11,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from multi_scale_volatility.config.names import (
+from multi_scale_volatility.core.config.names import (
     COMPONENT,
     DETAIL_ENERGY_SHARE,
     RMS_VOLATILITY,
 )
-from multi_scale_volatility.config.paths import (
+from multi_scale_volatility.core.config.paths import (
     FINAL_RETURNS_CSV,
     ROLLING_EXAMPLE_WINDOWS_CSV,
     ROLLING_LAYER_VOLATILITY_CSV,
@@ -26,7 +26,7 @@ from multi_scale_volatility.config.paths import (
     ROLLING_WINDOW_METADATA_CSV,
     ROLLING_WINDOW_SUMMARY_CSV,
 )
-from multi_scale_volatility.io import write_csv
+from multi_scale_volatility.core.io import write_csv
 from multi_scale_volatility.plotting.save import save_figure
 from multi_scale_volatility.plotting.style import (
     FIGURE_DPI,
@@ -35,7 +35,7 @@ from multi_scale_volatility.plotting.style import (
     GAUSSIAN_COLOR,
     SHUFFLE_COLOR,
 )
-from multi_scale_volatility.rolling import (
+from multi_scale_volatility.research.rolling_window_diagnosis.rolling import (
     ROLLING_K,
     ROLLING_RANDOM_SEED,
     ROLLING_STEP_SIZE,

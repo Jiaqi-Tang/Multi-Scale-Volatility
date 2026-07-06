@@ -17,8 +17,8 @@ from multi_scale_volatility.plotting.style import (
     SERIES_COLORS,
     SERIES_LABELS,
 )
-from multi_scale_volatility.components import decomposition_components
-from multi_scale_volatility.stats import normal_quantiles_for_values
+from multi_scale_volatility.core.components import decomposition_components
+from multi_scale_volatility.core.stats import normal_quantiles_for_values
 
 
 def plot_entropy_pattern_distribution_grid(

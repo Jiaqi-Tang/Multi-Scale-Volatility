@@ -16,8 +16,8 @@ from multi_scale_volatility.plotting.style import (
     GRID_FIGURE_DPI,
     SHUFFLE_COLOR,
 )
-from multi_scale_volatility.components import compress_component
-from multi_scale_volatility.stats import autocorrelation, compressed_layer_autocorrelation
+from multi_scale_volatility.core.components import compress_component
+from multi_scale_volatility.core.stats import autocorrelation, compressed_layer_autocorrelation
 
 
 def plot_acf_comparison(
