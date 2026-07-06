@@ -9,9 +9,11 @@ from multi_scale_volatility.app.cli_common import json_ready_summary, print_json
 from multi_scale_volatility.app.cli_global import add_global_commands
 from multi_scale_volatility.app.cli_plotting import add_plot_commands
 from multi_scale_volatility.app.cli_rolling import add_rolling_commands
+from multi_scale_volatility.app.cli_run import add_run_commands
 from multi_scale_volatility.app.pipeline import PipelineOptions, run_all
 from multi_scale_volatility.app.runtime import configure_logging
 from multi_scale_volatility.core.config.names import DEFAULT_K
+from multi_scale_volatility.research.rolling_window_diagnosis.rolling import ROLLING_K
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -36,6 +38,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_global_commands(subparsers)
     add_rolling_commands(subparsers)
     add_plot_commands(subparsers)
+    add_run_commands(subparsers)
     _add_run_all(subparsers)
 
     return parser
@@ -44,12 +47,19 @@ def build_parser() -> argparse.ArgumentParser:
 def _add_run_all(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = subparsers.add_parser("run-all", help="Run the full in-process pipeline.")
     parser.add_argument("--k", type=int, default=DEFAULT_K)
+    parser.add_argument("--rolling-k", type=int, default=ROLLING_K)
     parser.add_argument("--skip-plots", action="store_true")
     parser.set_defaults(handler=_handle_run_all)
 
 
 def _handle_run_all(args: argparse.Namespace) -> None:
-    results = run_all(PipelineOptions(k=args.k, include_plots=not args.skip_plots))
+    results = run_all(
+        PipelineOptions(
+            k=args.k,
+            rolling_k=args.rolling_k,
+            include_plots=not args.skip_plots,
+        )
+    )
     print_json(json_ready_summary(results))
 
 

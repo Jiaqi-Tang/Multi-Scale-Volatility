@@ -55,6 +55,7 @@ from multi_scale_volatility.plotting.rolling_regimes import (
 )
 from multi_scale_volatility.research.preprocessing import PreprocessingPaths, run_preprocessing
 from multi_scale_volatility.research.rolling_window_diagnosis.rolling import (
+    ROLLING_K,
     RollingPaths,
     compute_rolling_decomposition_diagnostics,
 )
@@ -76,6 +77,7 @@ logger = get_logger(__name__)
 @dataclass(frozen=True)
 class PipelineOptions:
     k: int = DEFAULT_K
+    rolling_k: int = ROLLING_K
     include_plots: bool = True
 
 
@@ -93,12 +95,8 @@ def run_data_processing_pipeline(options: PipelineOptions | None = None) -> dict
     options = options or PipelineOptions()
     results: dict[str, Any] = {}
     stages = [
-        ("preprocessing", lambda: run_preprocessing(PreprocessingPaths())),
-        (
-            "length_standardization",
-            lambda: standardize_length(
-                LengthStandardizationPaths(), k=options.k),
-        ),
+        ("preprocess", lambda: run_preprocess_stage()),
+        ("standardize", lambda: run_standardize_stage(options)),
     ]
     for name, run_stage in stages:
         with logged_stage(logger, name):
@@ -110,8 +108,8 @@ def run_global_analysis_pipeline(options: PipelineOptions | None = None) -> dict
     options = options or PipelineOptions()
     results: dict[str, Any] = {}
     stages = [
-        ("empirical_decomposition", lambda: run_empirical_decomposition(k=options.k)),
-        ("empirical_metrics", lambda: compute_empirical_metrics(k=options.k)),
+        ("decompose", lambda: run_global_decompose_stage(options)),
+        ("metrics", lambda: run_global_metrics_stage(options)),
     ]
     for name, run_stage in stages:
         with logged_stage(logger, name):
@@ -123,11 +121,8 @@ def run_monte_carlo_pipeline(options: PipelineOptions | None = None) -> dict[str
     options = options or PipelineOptions()
     results: dict[str, Any] = {}
     stages = [
-        ("monte_carlo_baselines", lambda: create_baselines(BaselinePaths(), k=options.k)),
-        (
-            "monte_carlo_metrics",
-            lambda: compute_monte_carlo_metrics(MonteCarloMetricPaths(), k=options.k),
-        ),
+        ("baselines", lambda: run_monte_carlo_baselines_stage(options)),
+        ("metrics", lambda: run_monte_carlo_metrics_stage(options)),
     ]
     for name, run_stage in stages:
         with logged_stage(logger, name):
@@ -139,20 +134,9 @@ def run_rolling_analysis_pipeline(options: PipelineOptions | None = None) -> dic
     options = options or PipelineOptions()
     results: dict[str, Any] = {}
     stages = [
-        (
-            "rolling_decomposition_diagnostics",
-            lambda: compute_rolling_decomposition_diagnostics(RollingPaths(), k=options.k),
-        ),
-        (
-            "rolling_baseline_correlations",
-            lambda: compute_rolling_baseline_correlations(
-                RollingBaselineCorrelationPaths(), k=options.k
-            ),
-        ),
-        (
-            "rolling_regime_diagnostics",
-            lambda: compute_rolling_regime_diagnostics(RollingRegimePaths()),
-        ),
+        ("diagnostics", lambda: run_rolling_diagnostics_stage(options)),
+        ("baselines", lambda: run_rolling_baselines_stage(options)),
+        ("regimes", lambda: run_rolling_regimes_stage()),
     ]
     for name, run_stage in stages:
         with logged_stage(logger, name):
@@ -162,43 +146,104 @@ def run_rolling_analysis_pipeline(options: PipelineOptions | None = None) -> dic
 
 def run_plot_pipeline(options: PipelineOptions | None = None) -> dict[str, list[Path]]:
     options = options or PipelineOptions()
-    results: dict[str, list[Path]] = {}
+    return {
+        "global": run_global_plot_pipeline(options),
+        "rolling": run_rolling_plot_pipeline(options),
+        "regimes": run_regime_plot_pipeline(),
+        "memo": run_memo_plot_pipeline(options),
+    }
+
+
+def run_global_plot_pipeline(options: PipelineOptions | None = None) -> list[Path]:
+    options = options or PipelineOptions()
+    with logged_stage(logger, "plot_global"):
+        return create_monte_carlo_baseline_plots(
+            MonteCarloBaselinePlotPaths(),
+            k=options.k,
+        )
+
+
+def run_rolling_plot_pipeline(options: PipelineOptions | None = None) -> list[Path]:
+    options = options or PipelineOptions()
+    outputs: list[Path] = []
     stages = [
+        ("plot_rolling", lambda: create_rolling_plots(RollingPlotPaths())),
         (
-            "global_diagnosis_plots",
-            lambda: create_monte_carlo_baseline_plots(
-                MonteCarloBaselinePlotPaths(),
-                k=options.k,
-            ),
-        ),
-        ("rolling_window_plots", lambda: create_rolling_plots(RollingPlotPaths())),
-        (
-            "rolling_example_plots",
+            "plot_rolling_examples",
             lambda: create_rolling_example_decomposition_plots(
                 RollingExamplePlotPaths(),
-                k=options.k,
+                k=options.rolling_k,
             ),
         ),
         (
-            "rolling_baseline_plots",
+            "plot_rolling_baselines",
             lambda: create_rolling_baseline_plots(RollingBaselinePlotPaths()),
-        ),
-        (
-            "rolling_regime_plots",
-            lambda: create_rolling_regime_plots(RollingRegimePlotPaths()),
-        ),
-        (
-            "v2_memo_plots",
-            lambda: create_v2_memo_plots(
-                MonteCarloBaselinePlotPaths(),
-                k=options.k,
-            ),
         ),
     ]
     for name, run_stage in stages:
         with logged_stage(logger, name):
-            results[name] = run_stage()
-    return results
+            outputs.extend(run_stage())
+    return outputs
+
+
+def run_regime_plot_pipeline() -> list[Path]:
+    with logged_stage(logger, "plot_regimes"):
+        return create_rolling_regime_plots(RollingRegimePlotPaths())
+
+
+def run_memo_plot_pipeline(options: PipelineOptions | None = None) -> list[Path]:
+    options = options or PipelineOptions()
+    with logged_stage(logger, "plot_memo"):
+        return create_v2_memo_plots(
+            MonteCarloBaselinePlotPaths(),
+            k=options.k,
+        )
+
+
+def run_preprocess_stage() -> dict[str, Any]:
+    return run_preprocessing(PreprocessingPaths())
+
+
+def run_standardize_stage(options: PipelineOptions | None = None) -> dict[str, Any]:
+    options = options or PipelineOptions()
+    return standardize_length(LengthStandardizationPaths(), k=options.k)
+
+
+def run_global_decompose_stage(options: PipelineOptions | None = None) -> dict[str, Any]:
+    options = options or PipelineOptions()
+    return run_empirical_decomposition(k=options.k)
+
+
+def run_global_metrics_stage(options: PipelineOptions | None = None) -> dict[str, Any]:
+    options = options or PipelineOptions()
+    return compute_empirical_metrics(k=options.k)
+
+
+def run_monte_carlo_baselines_stage(options: PipelineOptions | None = None) -> dict[str, Any]:
+    options = options or PipelineOptions()
+    return create_baselines(BaselinePaths(), k=options.k)
+
+
+def run_monte_carlo_metrics_stage(options: PipelineOptions | None = None) -> dict[str, Any]:
+    options = options or PipelineOptions()
+    return compute_monte_carlo_metrics(MonteCarloMetricPaths(), k=options.k)
+
+
+def run_rolling_diagnostics_stage(options: PipelineOptions | None = None) -> dict[str, Any]:
+    options = options or PipelineOptions()
+    return compute_rolling_decomposition_diagnostics(RollingPaths(), k=options.rolling_k)
+
+
+def run_rolling_baselines_stage(options: PipelineOptions | None = None) -> dict[str, Any]:
+    options = options or PipelineOptions()
+    return compute_rolling_baseline_correlations(
+        RollingBaselineCorrelationPaths(),
+        k=options.rolling_k,
+    )
+
+
+def run_rolling_regimes_stage() -> dict[str, Any]:
+    return compute_rolling_regime_diagnostics(RollingRegimePaths())
 
 
 def run_all(options: PipelineOptions | None = None) -> dict[str, Any]:

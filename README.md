@@ -23,6 +23,8 @@ The project is intentionally minimalist: it does not use forecasting models, opt
 
 ## Key Findings
 
+## Key Findings
+
 - **Rolling RMS volatility synchronizes strongly across scales:** High-volatility periods tend to raise RMS across many detail components simultaneously.
 - **Scale composition is comparatively stable:** Fine-scale detail energy dominates through time, while mid and coarse shares fluctuate within narrower ranges.
 - **Volatility level and scale composition are distinct.** Total RMS volatility is nearly uncorrelated with fine/mid/coarse energy shares.
@@ -60,82 +62,44 @@ pip install -e .
 Run the full current pipeline:
 
 ```powershell
-ve run-all
+ve run all
 ```
 
-Starting from the source code and `data/raw/`, this regenerates the derived
-`data/`, `results/`, and `plots/` artifacts for the current analysis.
+Starting from the source code and `data/raw/`, this regenerates the processed
+data, derived decompositions and baselines, result tables, and plots for the
+current analysis. `ve run-all` is kept as a compatibility alias.
 
-The explicit equivalent is:
+Run grouped stages when you only need part of the workflow:
 
 ```powershell
-# data processing
-ve preprocess
-ve standardize
-
-# global analysis
-ve decompose
-ve volatility
-ve entropy
-
-# Monte Carlo baselines
-ve baselines
-ve monte-carlo-metrics
-
-# rolling analysis
-ve rolling
-ve rolling-baselines
-ve rolling-regimes
-
-# plotting
-ve plot monte-carlo-baselines
-ve plot rolling
-ve plot rolling-examples
-ve plot rolling-baselines
-ve plot rolling-regimes
-ve plot memo
+ve run data
+ve run global
+ve run monte-carlo
+ve run rolling
+ve run plots
 ```
 
-## Repository Structure
+Run individual steps when needed:
 
-```text
-src/
-  multi_scale_volatility/
-    app/
-    core/
-    plotting/
-    research/
-      preprocessing/
-      global_diagnosis/
-      rolling_window_diagnosis/
-
-data/
-  raw/
-  processed/
-  derived/
-    decomposition/
-    monte_carlo_baselines/
-
-results/
-  global_diagnosis/
-    volatility/
-    entropy/
-    monte_carlo_baselines/
-  rolling_window_diagnosis/
-    rolling_metrics/
-    rolling_baselines/
-    regimes/
-
-plots/
-  memo/
-  results/
-    global_diagnosis/
-    rolling_window_diagnosis/
-
-Documentation.md
-Memo.md
-README.md
+```powershell
+ve run data preprocess
+ve run data standardize
+ve run global decompose
+ve run global metrics
+ve run monte-carlo baselines
+ve run monte-carlo metrics
+ve run rolling diagnostics
+ve run rolling baselines
+ve run rolling regimes
+ve run plots global
+ve run plots rolling
+ve run plots regimes
+ve run plots memo
 ```
+
+`ve run plots rolling` combines rolling diagnostic plots, rolling example plots,
+and rolling baseline envelope plots. Lower-level commands such as `ve plot memo`
+remain available for targeted plot regeneration during development.
 
 ## Current Status and Next Steps
 
