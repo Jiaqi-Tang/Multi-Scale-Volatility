@@ -32,7 +32,7 @@ from multi_scale_volatility.monte_carlo_metrics import (
     compute_monte_carlo_metrics,
     compute_volatility_rows,
 )
-from multi_scale_volatility.plotting.monte_carlo_baselines import (
+from multi_scale_volatility.plotting.global_results import (
     MonteCarloBaselinePlotPaths,
     create_v11_memo_plots,
 )
