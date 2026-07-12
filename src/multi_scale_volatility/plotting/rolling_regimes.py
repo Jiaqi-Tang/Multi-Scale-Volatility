@@ -25,6 +25,7 @@ from multi_scale_volatility.core.config.paths import (
     ROLLING_REGIME_METRICS_CSV,
     ROLLING_REGIME_PLOTS_DIR,
     ROLLING_REGIME_RESULTS_DIR,
+    ROLLING_RESULTS_DIR,
     ROLLING_WINDOW_METADATA_CSV,
 )
 from multi_scale_volatility.plotting.save import save_figure
@@ -46,7 +47,7 @@ from multi_scale_volatility.research.rolling_window_diagnosis.rolling_regimes im
 class RollingRegimePlotPaths:
     final_returns_csv: Path = FINAL_RETURNS_CSV
     results_dir: Path = ROLLING_REGIME_RESULTS_DIR
-    rolling_results_dir: Path = ROLLING_REGIME_RESULTS_DIR.parent
+    rolling_results_dir: Path = ROLLING_RESULTS_DIR
     output_dir: Path = ROLLING_REGIME_PLOTS_DIR
 
     @property
