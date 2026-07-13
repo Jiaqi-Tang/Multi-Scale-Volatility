@@ -67,6 +67,12 @@ from multi_scale_volatility.research.rolling_window_diagnosis.rolling_regimes im
     RollingRegimePaths,
     compute_rolling_regime_diagnostics,
 )
+from multi_scale_volatility.plotting.event_eda import EventEdaPlotPaths, create_event_eda_plots
+from multi_scale_volatility.research.event_study.events import (
+    EventStudyPaths,
+    detect_events,
+    extract_event_windows,
+)
 from multi_scale_volatility.core.io import write_csv
 from multi_scale_volatility.core.io import write_json
 from multi_scale_volatility.app.runtime import get_logger, logged_stage
@@ -144,12 +150,29 @@ def run_rolling_analysis_pipeline(options: PipelineOptions | None = None) -> dic
     return results
 
 
+def run_event_study_pipeline() -> dict[str, Any]:
+    paths = EventStudyPaths()
+    return {
+        "detection": detect_events(paths),
+        "windows": extract_event_windows(paths),
+    }
+
+
+def run_event_detection_stage() -> dict[str, Any]:
+    return detect_events(EventStudyPaths())
+
+
+def run_event_windows_stage() -> dict[str, Any]:
+    return extract_event_windows(EventStudyPaths())
+
+
 def run_plot_pipeline(options: PipelineOptions | None = None) -> dict[str, list[Path]]:
     options = options or PipelineOptions()
     return {
         "global": run_global_plot_pipeline(options),
         "rolling": run_rolling_plot_pipeline(options),
         "regimes": run_regime_plot_pipeline(),
+        "events": run_event_plot_pipeline(),
         "memo": run_memo_plot_pipeline(options),
     }
 
@@ -189,6 +212,11 @@ def run_rolling_plot_pipeline(options: PipelineOptions | None = None) -> list[Pa
 def run_regime_plot_pipeline() -> list[Path]:
     with logged_stage(logger, "plot_regimes"):
         return create_rolling_regime_plots(RollingRegimePlotPaths())
+
+
+def run_event_plot_pipeline() -> list[Path]:
+    with logged_stage(logger, "plot_events"):
+        return create_event_eda_plots(EventEdaPlotPaths())
 
 
 def run_memo_plot_pipeline(options: PipelineOptions | None = None) -> list[Path]:

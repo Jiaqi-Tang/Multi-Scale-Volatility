@@ -45,7 +45,7 @@ The project is intentionally minimalist: it does not use forecasting models, opt
 | V2.1       | Rolling-window RMS volatility and energy-share diagnostics                          | Complete |
 | V2.2       | Rolling baseline envelopes for cross-scale correlation diagnostics                  | Complete |
 | V2.3       | Exploratory volatility-state regime maps using total RMS and fine-share percentiles | Complete |
-| V3 planned | Event-aligned transition analysis of high-volatility episodes                       | Planned  |
+| V3.0       | Causal event detection and event-aligned nine-level decomposition                    | In progress |
 
 ## Reproduce the Pipeline
 
@@ -89,15 +89,23 @@ ve run monte-carlo metrics
 ve run rolling diagnostics
 ve run rolling baselines
 ve run rolling regimes
+ve run events detect
+ve run events windows
 ve run plots global
 ve run plots rolling
 ve run plots regimes
+ve run plots events
 ve run plots memo
 ```
 
 `ve run plots rolling` combines rolling diagnostic plots, rolling example plots,
 and rolling baseline envelope plots. Lower-level commands such as `ve plot memo`
 remain available for targeted plot regeneration during development.
+
+The V3 event stages can also be run together with `ve events all`. Detection uses
+a 16-observation raw-return RMS score against an exact causal rolling median/MAD
+reference. Eligible events are extracted over 4,608 observations
+from relative offset -1,440 through +3,167 and decomposed through `K=9`.
 
 ## Current Status and Next Steps
 

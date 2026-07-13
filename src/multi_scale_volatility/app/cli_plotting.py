@@ -9,6 +9,8 @@ from multi_scale_volatility.app.cli_common import print_paths
 from multi_scale_volatility.app.pipeline import PipelineOptions, run_plot_pipeline
 from multi_scale_volatility.core.config.names import DEFAULT_K
 from multi_scale_volatility.core.config.paths import (
+    EVENT_EDA_PLOTS_DIR,
+    EVENT_STUDY_RESULTS_DIR,
     FINAL_DECOMPOSITION_CSV,
     FINAL_RETURNS_CSV,
     MEMO_PLOTS_DIR,
@@ -21,6 +23,7 @@ from multi_scale_volatility.core.config.paths import (
     ROLLING_RESULTS_DIR,
     ROLLING_WINDOWS_PLOTS_DIR,
 )
+from multi_scale_volatility.plotting.event_eda import EventEdaPlotPaths, create_event_eda_plots
 from multi_scale_volatility.plotting.global_results import (
     MonteCarloBaselinePlotPaths,
     create_monte_carlo_baseline_plots,
@@ -112,6 +115,15 @@ def add_plot_commands(
     rolling_regimes.add_argument("--output-dir", type=Path, default=ROLLING_REGIME_PLOTS_DIR)
     rolling_regimes.set_defaults(handler=_handle_plot_rolling_regimes)
 
+    events = plot_subparsers.add_parser(
+        "events",
+        help="Create V3 event-study exploratory plots.",
+    )
+    events.add_argument("--results-dir", type=Path, default=EVENT_STUDY_RESULTS_DIR)
+    events.add_argument("--output-dir", type=Path, default=EVENT_EDA_PLOTS_DIR)
+    events.add_argument("--random-seed", type=int, default=20260712)
+    events.set_defaults(handler=_handle_plot_events)
+
     all_plots = plot_subparsers.add_parser("all", help="Create all plot artifacts.")
     all_plots.add_argument("--k", type=int, default=DEFAULT_K)
     all_plots.set_defaults(handler=_handle_plot_all)
@@ -184,6 +196,15 @@ def _handle_plot_rolling_regimes(args: argparse.Namespace) -> None:
                 rolling_results_dir=args.rolling_results_dir,
                 output_dir=args.output_dir,
             )
+        )
+    )
+
+
+def _handle_plot_events(args: argparse.Namespace) -> None:
+    print_paths(
+        create_event_eda_plots(
+            EventEdaPlotPaths(results_dir=args.results_dir, output_dir=args.output_dir),
+            random_seed=args.random_seed,
         )
     )
 

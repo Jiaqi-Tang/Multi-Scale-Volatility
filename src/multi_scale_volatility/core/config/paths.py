@@ -76,6 +76,16 @@ ROLLING_REGIME_EPISODE_COUNTS_CSV = (
 )
 ROLLING_REGIME_REPORT_JSON = ROLLING_REGIME_RESULTS_DIR / "rolling_regime_report.json"
 
+EVENT_STUDY_RESULTS_DIR = Path("results/event_study")
+EVENT_DETECTION_SERIES_PARQUET = EVENT_STUDY_RESULTS_DIR / "event_detection_series.parquet"
+EVENT_CATALOG_CSV = EVENT_STUDY_RESULTS_DIR / "event_catalog.csv"
+EVENT_DETECTION_REPORT_JSON = EVENT_STUDY_RESULTS_DIR / "event_detection_report.json"
+EVENT_WINDOWS_PARQUET = EVENT_STUDY_RESULTS_DIR / "event_windows.parquet"
+EVENT_COMPONENT_SUMMARY_CSV = EVENT_STUDY_RESULTS_DIR / "event_component_summary.csv"
+EVENT_SCALE_GROUP_SUMMARY_CSV = EVENT_STUDY_RESULTS_DIR / "event_scale_group_summary.csv"
+EVENT_WINDOWS_REPORT_JSON = EVENT_STUDY_RESULTS_DIR / "event_windows_report.json"
+EVENT_EDA_PLOTS_DIR = Path("plots/results/events/vol_spike/event_eda")
+
 MONTE_CARLO_BASELINES_RESULTS_DIR = GLOBAL_DIAGNOSIS_RESULTS_DIR / "monte_carlo_baselines"
 MONTE_CARLO_BASELINE_CONFIG_JSON = (
     MONTE_CARLO_BASELINES_RESULTS_DIR / "monte_carlo_config.json"

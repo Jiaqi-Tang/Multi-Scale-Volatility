@@ -1,0 +1,12 @@
+{
+  "input_csv": "data\\processed\\eurusd_5m_log_returns_final.csv",
+  "event_catalog_csv": "results\\event_study\\event_catalog.csv",
+  "event_windows_parquet": "results\\event_study\\event_windows.parquet",
+  "component_summary_csv": "results\\event_study\\event_component_summary.csv",
+  "scale_group_summary_csv": "results\\event_study\\event_scale_group_summary.csv",
+  "eligible_event_count": 199,
+  "event_window_length": 4608,
+  "K": 9,
+  "block_size_max": 512,
+  "max_abs_reconstruction_error": 3.469446951953614e-18
+}

@@ -1,0 +1,6 @@
+event_id,anchor_index,event_timestamp_utc,window_start_index,window_end_index,window_start_timestamp_utc,window_end_timestamp_utc,is_window_eligible,overlaps_previous,overlaps_next,overlap_event_count,overlap_cluster_id,is_overlapping,weekday,weekday_number,utc_hour,year,selection_reason
+0,7099,2016-02-05 14:00:00+00:00,5659,10266,2016-01-29 13:55:00+00:00,2016-02-22 14:10:00+00:00,True,False,False,0,,False,Friday,4,14,2016,first_event
+198,731589,2025-12-10 20:00:00+00:00,730149,734756,2025-12-03 19:55:00+00:00,2025-12-26 14:45:00+00:00,True,False,False,0,,False,Wednesday,2,20,2025,last_event
+65,232806,2019-02-14 13:30:00+00:00,231366,235973,2019-02-07 13:25:00+00:00,2019-03-01 13:35:00+00:00,True,True,False,1,9.0,True,Thursday,3,13,2019,random_1
+70,255675,2019-06-06 13:50:00+00:00,254235,258842,2019-05-30 13:45:00+00:00,2019-06-21 13:55:00+00:00,True,False,True,1,12.0,True,Thursday,3,13,2019,random_2
+136,583252,2023-12-14 14:25:00+00:00,581812,586419,2023-12-07 14:20:00+00:00,2024-01-02 07:15:00+00:00,True,True,True,3,28.0,True,Thursday,3,14,2023,random_3

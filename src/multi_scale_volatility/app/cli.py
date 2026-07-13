@@ -6,6 +6,7 @@ import argparse
 from typing import Sequence
 
 from multi_scale_volatility.app.cli_common import json_ready_summary, print_json
+from multi_scale_volatility.app.cli_events import add_event_commands
 from multi_scale_volatility.app.cli_global import add_global_commands
 from multi_scale_volatility.app.cli_plotting import add_plot_commands
 from multi_scale_volatility.app.cli_rolling import add_rolling_commands
@@ -37,6 +38,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     add_global_commands(subparsers)
     add_rolling_commands(subparsers)
+    add_event_commands(subparsers)
     add_plot_commands(subparsers)
     add_run_commands(subparsers)
     _add_run_all(subparsers)

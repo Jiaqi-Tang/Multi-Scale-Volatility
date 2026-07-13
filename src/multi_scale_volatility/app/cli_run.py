@@ -11,6 +11,10 @@ from multi_scale_volatility.app.pipeline import (
     PipelineOptions,
     run_all,
     run_data_processing_pipeline,
+    run_event_detection_stage,
+    run_event_study_pipeline,
+    run_event_windows_stage,
+    run_event_plot_pipeline,
     run_global_analysis_pipeline,
     run_global_decompose_stage,
     run_global_metrics_stage,
@@ -70,8 +74,12 @@ def add_run_commands(
     _add_common_options(rolling)
     rolling.set_defaults(handler=_handle_run_rolling)
 
+    events = run_subparsers.add_parser("events", help="Run V3 event-study stages.")
+    events.add_argument("step", nargs="?", choices=("detect", "windows"))
+    events.set_defaults(handler=_handle_run_events)
+
     plots = run_subparsers.add_parser("plots", help="Run plot generation stages.")
-    plots.add_argument("step", nargs="?", choices=("global", "rolling", "regimes", "memo"))
+    plots.add_argument("step", nargs="?", choices=("global", "rolling", "regimes", "events", "memo"))
     _add_common_options(plots)
     plots.set_defaults(handler=_handle_run_plots)
 
@@ -155,6 +163,17 @@ def _handle_run_rolling(args: argparse.Namespace) -> None:
     print_json(result)
 
 
+def _handle_run_events(args: argparse.Namespace) -> None:
+    if args.step is None:
+        result = run_event_study_pipeline()
+    else:
+        result = _run_named_stage(
+            args.step,
+            {"detect": run_event_detection_stage, "windows": run_event_windows_stage},
+        )
+    print_json(result)
+
+
 def _handle_run_plots(args: argparse.Namespace) -> None:
     options = _options(args)
     if args.step is None:
@@ -166,6 +185,7 @@ def _handle_run_plots(args: argparse.Namespace) -> None:
                 "global": lambda: run_global_plot_pipeline(options),
                 "rolling": lambda: run_rolling_plot_pipeline(options),
                 "regimes": run_regime_plot_pipeline,
+                "events": run_event_plot_pipeline,
                 "memo": lambda: run_memo_plot_pipeline(options),
             },
         )
