@@ -116,7 +116,7 @@ Cross-scale dependence provides stronger evidence of temporal volatility structu
 
 This result is important because the shuffled baseline preserves the empirical marginal return distribution. Therefore, excess cross-scale coupling cannot be explained by heavy tails alone. It reflects temporal dependence in volatility magnitudes: periods of elevated fine-scale activity tend to coincide with elevated activity at other scales.
 
-The average empirical off-diagonal absolute-component correlation is $0.191$, compared with a shuffled median of $0.052$. The strongest excess occurs across adjacent middle/coarse pairs and cross-links into $D_5$ through $D_8$; examples include $D_7$-$D_8$ at $+0.236$, $D_8$-$D_9$ at $+0.227$, and $D_5$-$D_6$ at $+0.220$ relative to the shuffled median.
+The average empirical off-diagonal absolute-component correlation is $0.191$, compared with a shuffled median of $0.052$. The strongest excess occurs across adjacent middle/coarse pairs and cross-links into $D_5$ through $D_8$.
 
 ![Cross-scale volatility coupling](plots/memo/figure_03_cross_scale_correlation.png)
 
